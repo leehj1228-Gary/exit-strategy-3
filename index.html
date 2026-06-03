@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>출구 전략 3</title>
+<style>
+  * { box-sizing: border-box; }
+  :root {
+    /* 화면 폭에 맞춰 칸 크기 자동 조절(데스크톱 최대 56px, 좁은 폰에선 축소) */
+    --cell: min(56px, calc((100vw - 76px) / 7));
+    --gap: 3px;
+  }
+  body {
+    margin: 0; padding: 16px;
+    font-family: -apple-system, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+    background: #f4f5f7; color: #1f2329;
+    display: flex; flex-direction: column; align-items: center;
+  }
+  h1 { font-size: 22px; margin: 4px 0 2px; }
+  .sub { font-size: 13px; color: #666; margin-bottom: 12px; }
+
+  .scorebar {
+    display: flex; gap: 10px; margin-bottom: 10px; width: 100%; max-width: 560px;
+  }
+  .score {
+    flex: 1; border-radius: 10px; padding: 8px 12px; font-size: 13px;
+    border: 2px solid transparent; background: #fff;
+  }
+  .score.p1 { border-color: #2f6fed; }
+  .score.p2 { border-color: #e0463e; }
+  .score b { font-size: 14px; }
+  .score.active { box-shadow: 0 0 0 3px rgba(0,0,0,.08); transform: translateY(-1px); }
+  .score .nums { color: #444; margin-top: 2px; }
+
+  #status {
+    width: 100%; max-width: 560px; min-height: 40px;
+    background: #fff; border-radius: 10px; padding: 10px 14px;
+    font-size: 14px; margin-bottom: 12px; border: 1px solid #e2e4e8;
+    line-height: 1.4;
+  }
+  #status b.blue { color: #2f6fed; }
+  #status b.red { color: #e0463e; }
+
+  /* board: outer split white/black like the show */
+  .boardwrap {
+    background: linear-gradient(90deg, #ffffff 0 50%, #111 50% 100%);
+    padding: 18px; border-radius: 16px; border: 1px solid #d7d9dd;
+  }
+  #board {
+    display: grid;
+    grid-template-columns: repeat(7, var(--cell));
+    grid-template-rows: repeat(7, var(--cell));
+    gap: var(--gap);
+  }
+  .cell { width: var(--cell); height: var(--cell); }
+  .cell.on {
+    background: #e6e8eb; border: 2px solid #4a4f57; border-radius: 4px;
+    position: relative; cursor: default;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .cell.yellow { background: #ffe45c; }
+  .cell.exit { background: #1aa64b; border-color: #0d7d36; }
+  .cell.exit::after {
+    content: "↩"; color: #fff; font-size: calc(var(--cell) * 0.46); font-weight: bold;
+    transform: scaleX(-1);
+  }
+
+  /* placement / move highlights */
+  .cell.placeable { outline: 3px solid #36b37e; outline-offset: -3px; cursor: pointer; }
+  .cell.dest      { cursor: pointer; }
+  .cell.dest::before {
+    content: ""; position: absolute; width: calc(var(--cell) * 0.4); height: calc(var(--cell) * 0.4); border-radius: 50%;
+    background: rgba(54,179,126,.55); border: 2px solid #1f8f5f;
+  }
+  .cell.dest.escape { outline: 4px solid #ffd000; outline-offset: -4px; animation: pulse .8s infinite alternate; }
+  .cell.dest.escape::before { background: rgba(255,208,0,.85); border-color:#fff; width:calc(var(--cell) * 0.46); height:calc(var(--cell) * 0.46); }
+  .cell.dest.escape::after {
+    content: "탈출!"; position:absolute; bottom:1px; font-size:11px; color:#fff; font-weight:bold;
+    text-shadow:0 0 3px #000;
+  }
+  @keyframes pulse { from { outline-color:#ffd000; } to { outline-color:#fff; } }
+  .cell.dest.capture::before { background: rgba(224,70,62,.55); border-color:#b32a23; }
+  .cell.dest.capture::after {
+    content: "제거"; position:absolute; bottom:2px; font-size:10px; color:#b32a23; font-weight:bold;
+  }
+
+  /* pieces */
+  .piece {
+    width: calc(var(--cell) * 0.72); height: calc(var(--cell) * 0.72); border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: bold; font-size: calc(var(--cell) * 0.32); color: #fff; cursor: pointer;
+    border: 2px solid rgba(255,255,255,.7); user-select: none;
+  }
+  .piece.t1 { background: #2f6fed; }
+  .piece.t2 { background: #e0463e; }
+  .piece.hunter { border: 3px solid #ffd000; box-shadow: 0 0 0 2px rgba(0,0,0,.25); }
+  .piece.selected { outline: 3px solid #111; outline-offset: 2px; }
+
+  .controls { margin-top: 14px; display: flex; gap: 8px; flex-wrap: wrap; justify-content:center; }
+  button {
+    font-size: 14px; padding: 8px 14px; border-radius: 8px; border: 1px solid #c2c5cb;
+    background: #fff; cursor: pointer;
+  }
+  button.primary { background: #2f6fed; color: #fff; border-color: #2f6fed; }
+  button:hover { filter: brightness(.97); }
+
+  details { max-width: 560px; width: 100%; margin-top: 14px; background:#fff;
+    border:1px solid #e2e4e8; border-radius:10px; padding: 4px 14px; font-size:13px; }
+  summary { cursor: pointer; font-weight: bold; padding: 8px 0; }
+  details ul { margin: 4px 0 12px; padding-left: 18px; line-height: 1.6; }
+  .legend { display:flex; gap:14px; font-size:12px; margin-top:10px; flex-wrap:wrap; justify-content:center;}
+  .legend span { display:flex; align-items:center; gap:5px; }
+  .dot { width:16px; height:16px; border-radius:50%; display:inline-block;}
+</style>
+</head>
+<body>
+  <h1>출구 전략 3</h1>
+  <div class="sub">2인용 (한 화면에서 번갈아 플레이)</div>
+
+  <div class="scorebar">
+    <div class="score p1" id="sc1">
+      <b>🔵 왼쪽 팀 (P1)</b>
+      <div class="nums" id="n1"></div>
+    </div>
+    <div class="score p2" id="sc2">
+      <b>🔴 오른쪽 팀 (P2)</b>
+      <div class="nums" id="n2"></div>
+    </div>
+  </div>
+
+  <div id="status"></div>
+
+  <div class="boardwrap">
+    <div id="board"></div>
+  </div>
+
+  <div class="legend">
+    <span><span class="dot" style="background:#2f6fed"></span>일반 말</span>
+    <span><span class="dot" style="background:#2f6fed;border:3px solid #ffd000"></span>헌터(H)</span>
+    <span><span class="dot" style="background:#ffe45c;border:1px solid #999"></span>노란 구역(헌터 배치)</span>
+    <span><span class="dot" style="background:#1aa64b"></span>출구</span>
+  </div>
+
+  <div class="controls">
+    <button class="primary" id="restart">처음부터 다시</button>
+  </div>
+
+  <details>
+    <summary>게임 방법 (펼쳐 보기)</summary>
+    <ul>
+      <li><b>목표</b>: 내 일반 말 <b>2명</b>을 출구로 탈출시키거나, 상대 일반 말 <b>3명</b>을 제거하면 승리.</li>
+      <li><b>배치</b>: 자기 진영(왼쪽=1~3열 / 오른쪽=5~7열)에 놓습니다. 먼저 양 팀이 <b>일반 말 5개</b>를 번갈아 놓고, 마지막에 <b>헌터</b>를 번갈아 놓습니다. 일반 말은 출구와 같은 행/열에는 놓을 수 없습니다(노란 구역에는 가능). 헌터는 반드시 <b>노란 구역</b>에 배치합니다.</li>
+      <li><b>일반 말</b>: 상하좌우 <b>직선</b>으로만 이동하며, 다른 말이나 벽에 닿으면 멈춥니다.</li>
+      <li><b>탈출</b>: 출구를 그냥 지나가는 건 탈출이 아닙니다. 직선 이동 끝에 <b>출구 칸에 딱 멈출 때</b>만 탈출! (즉 출구 바로 뒤에 벽이나 다른 말이 있어야 거기서 멈출 수 있어요.)</li>
+      <li><b>헌터(H)</b>: 상하좌우 <b>한 칸</b>씩만 이동. 그 칸에 상대 일반 말이 있으면 즉시 제거합니다. 헌터끼리는 못 잡고, 출구는 지나가거나 탈출할 수 없습니다.</li>
+      <li><b>조작</b>: 내 말을 클릭 → 갈 수 있는 칸(초록/빨강/탈출 표시)이 보이면 그 칸을 클릭.</li>
+    </ul>
+  </details>
+
+<script>
+//================= 보드 정의 (이미지 기반 33칸 십자형, 180° 대칭) =================
+const ROWS = {
+  1: [2,3,4],
+  2: [1,2,3,4,5],
+  3: [1,2,3,4,5],
+  4: [1,2,3,4,5,6,7],
+  5: [3,4,5,6,7],
+  6: [3,4,5,6,7],
+  7: [4,5,6],
+};
+const CELLS = new Set();
+for (const r in ROWS) for (const c of ROWS[r]) CELLS.add(r+','+c);
+const onBoard = (r,c) => CELLS.has(r+','+c);
+const EXIT = {r:4, c:4};
+const isExit = (r,c) => r===EXIT.r && c===EXIT.c;
+
+// 노란 구역: 왼쪽=1열 (2,3,4행), 오른쪽=7열 (4,5,6행)
+const yellow1 = new Set(['2,1','3,1','4,1']);
+const yellow2 = new Set(['4,7','5,7','6,7']);
+const isYellow = (r,c) => yellow1.has(r+','+c) || yellow2.has(r+','+c);
+
+// 진영: P1 = 1~3열, P2 = 5~7열
+function teamTerritory(team, r, c){
+  if(!onBoard(r,c)) return false;
+  return team===1 ? (c>=1 && c<=3) : (c>=5 && c<=7);
+}
+
+//================= 게임 상태 =================
+let pieces, phase, placeTeam, placeStep, moverCount, current, selected, dests, gameMsg;
+
+function freshState(){
+  pieces = [];
+  phase = 'place';      // place | play | over
+  placeTeam = 1;        // 배치 중인 팀
+  placeStep = 'movers'; // movers(번갈아) -> hunters(번갈아)
+  moverCount = {1:0, 2:0};
+  current = 1;          // 플레이 중 차례
+  selected = null;
+  dests = [];
+  gameMsg = '';
+}
+freshState();
+
+function occMap(){
+  const m = {};
+  for(const p of pieces) if(p.alive && p.r!=null) m[p.r+','+p.c] = p;
+  return m;
+}
+function pieceAt(r,c){ return pieces.find(p=>p.alive && p.r===r && p.c===c); }
+
+const score = {
+  1:{escaped:0, lost:0},
+  2:{escaped:0, lost:0},
+};
+function recomputeScore(){
+  score[1]={escaped:0,lost:0}; score[2]={escaped:0,lost:0};
+  for(const p of pieces){
+    if(p.type!=='mover') continue;
+    if(p.escaped) score[p.team].escaped++;
+    if(p.captured) score[p.team].lost++;
+  }
+}
+
+//================= 이동 계산 =================
+function scanMover(piece, dr, dc){
+  // 출구 칸도 그냥 통과(빈 칸)로 취급한다. 직선 이동 끝에 '멈추는' 칸이
+  // 출구라면(= 출구 바로 뒤가 벽이나 다른 말) 탈출. 그냥 지나가면 탈출 아님.
+  const occ = occMap();
+  let r=piece.r, c=piece.c, last=null;
+  while(true){
+    const nr=r+dr, nc=c+dc;
+    if(!onBoard(nr,nc)) break;     // 벽 → 멈춤
+    if(occ[nr+','+nc]) break;       // 다른 말 → 멈춤
+    last={r:nr,c:nc};               // 출구 포함 빈 칸 → 계속 진행
+    r=nr; c=nc;
+  }
+  if(!last) return null;            // 이동 불가
+  if(isExit(last.r,last.c)) return {r:last.r,c:last.c,kind:'escape'}; // 출구에 멈춤 → 탈출
+  return {r:last.r,c:last.c,kind:'move'};
+}
+const DIRS = [[-1,0],[1,0],[0,-1],[0,1]];
+
+function moverDests(piece){
+  const out=[];
+  for(const [dr,dc] of DIRS){ const d=scanMover(piece,dr,dc); if(d) out.push(d); }
+  return out;
+}
+function hunterDests(piece){
+  const occ=occMap(); const out=[];
+  for(const [dr,dc] of DIRS){
+    const nr=piece.r+dr, nc=piece.c+dc;
+    if(!onBoard(nr,nc)) continue;
+    if(isExit(nr,nc)) continue;            // 헌터는 출구 불가
+    const t = occ[nr+','+nc];
+    if(!t){ out.push({r:nr,c:nc,kind:'move'}); continue; }
+    if(t.team===piece.team) continue;       // 아군 막힘
+    if(t.type==='hunter') continue;          // 상대 헌터 못 잡음
+    out.push({r:nr,c:nc,kind:'capture',target:t.id}); // 상대 일반 말 제거
+  }
+  return out;
+}
+
+//================= 렌더링 =================
+const board = document.getElementById('board');
+function buildGrid(){
+  board.innerHTML='';
+  for(let r=1;r<=7;r++) for(let c=1;c<=7;c++){
+    const d=document.createElement('div');
+    d.className='cell';
+    d.dataset.r=r; d.dataset.c=c;
+    if(onBoard(r,c)){
+      d.classList.add('on');
+      if(isExit(r,c)) d.classList.add('exit');
+      else if(isYellow(r,c)) d.classList.add('yellow');
+      d.addEventListener('click', ()=>onCellClick(r,c));
+    }
+    board.appendChild(d);
+  }
+}
+function cellEl(r,c){ return board.querySelector(`.cell[data-r="${r}"][data-c="${c}"]`); }
+
+function render(){
+  // clear dynamic classes & pieces
+  board.querySelectorAll('.cell').forEach(el=>{
+    el.classList.remove('placeable','dest','escape','capture');
+    const tok = el.querySelector('.piece'); if(tok) tok.remove();
+  });
+  // pieces
+  for(const p of pieces){
+    if(!p.alive || p.r==null) continue;
+    const el=cellEl(p.r,p.c); if(!el) continue;
+    const tok=document.createElement('div');
+    tok.className='piece t'+p.team+(p.type==='hunter'?' hunter':'')+(selected&&selected.id===p.id?' selected':'');
+    tok.textContent = p.type==='hunter' ? 'H' : p.num;
+    el.appendChild(tok);
+  }
+  // highlights
+  if(phase==='place'){
+    placeableCells().forEach(([r,c])=>cellEl(r,c).classList.add('placeable'));
+  } else if(phase==='play' && selected){
+    for(const d of dests){
+      const el=cellEl(d.r,d.c); el.classList.add('dest');
+      if(d.kind==='escape') el.classList.add('escape');
+      if(d.kind==='capture') el.classList.add('capture');
+    }
+  }
+  // scores + status
+  recomputeScore();
+  document.getElementById('n1').textContent = `탈출 ${score[1].escaped}/2 · 잃은 말 ${score[1].lost}/3`;
+  document.getElementById('n2').textContent = `탈출 ${score[2].escaped}/2 · 잃은 말 ${score[2].lost}/3`;
+  document.getElementById('sc1').classList.toggle('active', (phase==='place'&&placeTeam===1)||(phase==='play'&&current===1));
+  document.getElementById('sc2').classList.toggle('active', (phase==='place'&&placeTeam===2)||(phase==='play'&&current===2));
+  document.getElementById('status').innerHTML = statusText();
+}
+
+function teamTag(t){ return t===1?'<b class="blue">왼쪽 팀(P1)</b>':'<b class="red">오른쪽 팀(P2)</b>'; }
+
+function statusText(){
+  if(phase==='over') return gameMsg;
+  if(phase==='place'){
+    const who=teamTag(placeTeam);
+    if(placeStep==='movers')
+      return `${who} 차례 — <b>일반 말 ${moverCount[placeTeam]+1}/5</b>를 놓으세요. (양 팀 번갈아 배치)`;
+    return `${who} 차례 — <b>헌터</b>를 노란 구역에 놓으세요. (양 팀 번갈아 배치)`;
+  }
+  return `${teamTag(current)} 차례 — 움직일 내 말을 클릭하세요.` + (gameMsg?`<br>${gameMsg}`:'');
+}
+
+//================= 배치 단계 =================
+function placeableCells(){
+  const out=[]; const occ=occMap();
+  for(let r=1;r<=7;r++) for(let c=1;c<=7;c++){
+    if(!onBoard(r,c) || occ[r+','+c]) continue;
+    if(placeStep==='hunters'){
+      const yz = placeTeam===1?yellow1:yellow2;
+      if(yz.has(r+','+c)) out.push([r,c]);
+    } else {
+      // 일반 말: 자기 진영, 출구와 같은 행/열 금지(규칙 9). 노란 구역에도 배치 가능
+      if(teamTerritory(placeTeam,r,c) && r!==EXIT.r && c!==EXIT.c) out.push([r,c]);
+    }
+  }
+  return out;
+}
+
+function placePiece(r,c){
+  if(placeStep==='movers'){
+    moverCount[placeTeam]++;
+    pieces.push({id:pieces.length, team:placeTeam, type:'mover', num:moverCount[placeTeam], r, c, alive:true, escaped:false, captured:false});
+    if(moverCount[1]>=5 && moverCount[2]>=5){
+      placeStep='hunters'; placeTeam=1;        // 일반 말 끝 → 헌터 배치(번갈아)
+    } else {
+      placeTeam = placeTeam===1?2:1;            // 팀 교대
+    }
+  } else { // hunters
+    pieces.push({id:pieces.length, team:placeTeam, type:'hunter', num:'H', r, c, alive:true, escaped:false, captured:false});
+    if(placeTeam===1){ placeTeam=2; }           // 다음은 P2 헌터
+    else { phase='play'; current=1; gameMsg=''; } // 둘 다 배치 완료 → 시작
+  }
+  render();
+}
+
+//================= 클릭 처리 =================
+function onCellClick(r,c){
+  if(phase==='place'){
+    if(placeableCells().some(([pr,pc])=>pr===r&&pc===c)) placePiece(r,c);
+    return;
+  }
+  if(phase!=='play') return;
+
+  // 목적지 클릭?
+  if(selected){
+    const d = dests.find(d=>d.r===r&&d.c===c);
+    if(d){ doMove(selected, d); return; }
+  }
+  // 내 말 선택/해제
+  const p = pieceAt(r,c);
+  if(p && p.team===current){
+    if(selected && selected.id===p.id){ selected=null; dests=[]; }
+    else { selected=p; dests = p.type==='hunter'?hunterDests(p):moverDests(p); }
+    render();
+    return;
+  }
+  // 빈 곳/상대 말 클릭 → 선택 해제
+  selected=null; dests=[]; render();
+}
+
+function doMove(p, d){
+  gameMsg='';
+  if(p.type==='mover'){
+    if(d.kind==='escape'){
+      p.escaped=true; p.alive=false; p.r=null; p.c=null;
+      gameMsg = `${teamTag(p.team)}의 ${p.num}번 말이 출구로 탈출했습니다! 🚪`;
+    } else {
+      p.r=d.r; p.c=d.c;
+    }
+  } else { // hunter
+    if(d.kind==='capture'){
+      const t=pieces.find(x=>x.id===d.target);
+      t.captured=true; t.alive=false;
+      const tr=t.r, tc=t.c; t.r=null; t.c=null;
+      p.r=tr; p.c=tc;
+      gameMsg = `헌터가 ${teamTag(t.team)}의 ${t.num}번 말을 제거했습니다! ✕`;
+    } else {
+      p.r=d.r; p.c=d.c;
+    }
+  }
+  selected=null; dests=[];
+  recomputeScore();
+
+  // 승리 판정
+  if(score[p.team].escaped>=2){ return endGame(p.team, `이동 말 2명 탈출 성공!`); }
+  if(score[1].lost>=3){ return endGame(2, `상대 일반 말 3명 제거!`); }
+  if(score[2].lost>=3){ return endGame(1, `상대 일반 말 3명 제거!`); }
+
+  current = current===1?2:1;
+  render();
+}
+
+function endGame(team, reason){
+  phase='over';
+  const tag = team===1?'🔵 왼쪽 팀(P1)':'🔴 오른쪽 팀(P2)';
+  gameMsg = `<b style="font-size:16px">🎉 ${tag} 승리!</b><br>${reason} <span style="color:#666">— "처음부터 다시"로 새 게임</span>`;
+  selected=null; dests=[];
+  render();
+}
+
+//================= 시작 =================
+document.getElementById('restart').addEventListener('click', ()=>{ freshState(); render(); });
+buildGrid();
+render();
+</script>
+</body>
+</html>
