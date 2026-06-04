@@ -20,6 +20,20 @@
   h1 { font-size: 22px; margin: 4px 0 2px; }
   .sub { font-size: 13px; color: #666; margin-bottom: 12px; }
 
+  /* 설정(모드/난이도) 패널 */
+  .setup {
+    display: flex; flex-wrap: wrap; gap: 8px 10px; align-items: center;
+    width: 100%; max-width: 560px; margin-bottom: 10px;
+    background: #fff; border: 1px solid #e2e4e8; border-radius: 10px; padding: 8px 12px; font-size: 13px;
+  }
+  .setup label { display: flex; align-items: center; gap: 5px; color:#444; }
+  .setup select {
+    font-size: 13px; padding: 4px 6px; border-radius: 6px; border: 1px solid #c2c5cb; background: #fff;
+  }
+  .setup #aiopts { display: none; gap: 8px 10px; flex-wrap: wrap; align-items: center; }
+  .setup button { font-size: 13px; padding: 6px 12px; }
+  .setup .spacer { flex: 1; }
+
   .scorebar {
     display: flex; gap: 10px; margin-bottom: 10px; width: 100%; max-width: 560px;
   }
@@ -32,6 +46,7 @@
   .score b { font-size: 14px; }
   .score.active { box-shadow: 0 0 0 3px rgba(0,0,0,.08); transform: translateY(-1px); }
   .score .nums { color: #444; margin-top: 2px; }
+  .score .role { display: block; font-size: 11px; color: #777; margin-top: 2px; }
 
   #status {
     width: 100%; max-width: 560px; min-height: 40px;
@@ -41,6 +56,7 @@
   }
   #status b.blue { color: #2f6fed; }
   #status b.red { color: #e0463e; }
+  #status .thinking { color: #7a5cff; font-weight: bold; }
 
   /* board: outer split white/black like the show */
   .boardwrap {
@@ -84,6 +100,23 @@
   .cell.dest.capture::after {
     content: "제거"; position:absolute; bottom:2px; font-size:10px; color:#b32a23; font-weight:bold;
   }
+  /* AI가 방금 둔 수 강조 */
+  .cell.lastfrom::after {
+    content: ""; position:absolute; inset:0; border:2px dashed #7a5cff; border-radius:4px; opacity:.7;
+  }
+  .cell.lastto { outline: 3px solid #7a5cff; outline-offset: -3px; }
+
+  /* 분석 오버레이: 승률 배지 + 최적수(blue spot) */
+  .cell .wrbadge {
+    position: absolute; top: 1px; right: 1px; z-index: 4;
+    font-size: 10px; font-weight: bold; line-height: 1.1; color: #fff;
+    padding: 1px 3px; border-radius: 6px; pointer-events: none;
+    box-shadow: 0 0 0 1px rgba(0,0,0,.3);
+  }
+  .cell.bestspot { outline: 4px solid #1668ff; outline-offset: -4px; box-shadow: 0 0 12px rgba(22,104,255,.85) inset; }
+  .cell.bestfrom::after {
+    content: ""; position: absolute; inset: 0; border: 3px dashed #1668ff; border-radius: 4px; opacity: .85;
+  }
 
   /* pieces */
   .piece {
@@ -97,13 +130,16 @@
   .piece.hunter { border: 3px solid #ffd000; box-shadow: 0 0 0 2px rgba(0,0,0,.25); }
   .piece.selected { outline: 3px solid #111; outline-offset: 2px; }
 
-  .controls { margin-top: 14px; display: flex; gap: 8px; flex-wrap: wrap; justify-content:center; }
+  .controls { margin-top: 14px; display: flex; gap: 8px; flex-wrap: wrap; justify-content:center; align-items:center; }
+  .controls .atoggle { display:flex; align-items:center; gap:5px; font-size:13px; cursor:pointer; }
+  .controls select { font-size:13px; padding:7px 10px; border-radius:8px; border:1px solid #c2c5cb; background:#fff; }
   button {
     font-size: 14px; padding: 8px 14px; border-radius: 8px; border: 1px solid #c2c5cb;
     background: #fff; cursor: pointer;
   }
   button.primary { background: #2f6fed; color: #fff; border-color: #2f6fed; }
   button:hover { filter: brightness(.97); }
+  button:disabled { opacity: .45; cursor: not-allowed; filter: none; }
 
   details { max-width: 560px; width: 100%; margin-top: 14px; background:#fff;
     border:1px solid #e2e4e8; border-radius:10px; padding: 4px 14px; font-size:13px; }
@@ -116,16 +152,47 @@
 </head>
 <body>
   <h1>출구 전략 3</h1>
-  <div class="sub">2인용 (한 화면에서 번갈아 플레이)</div>
+  <div class="sub">사람끼리 또는 컴퓨터(AI)와 대결 — 한 화면에서 플레이</div>
+
+  <!-- 모드 / 난이도 선택 -->
+  <div class="setup">
+    <label>모드
+      <select id="mode">
+        <option value="pvp">🙂 사람 vs 사람</option>
+        <option value="pvc">🤖 사람 vs 컴퓨터</option>
+      </select>
+    </label>
+    <span id="aiopts">
+      <label>난이도
+        <select id="level">
+          <option value="easy">🟢 쉬움</option>
+          <option value="medium">🟡 보통</option>
+          <option value="hard" selected>🔴 어려움</option>
+          <option value="insane">🟣 매우 어려움</option>
+          <option value="mcts">🧠 학습형(MCTS)</option>
+        </select>
+      </label>
+      <label>내 진영
+        <select id="humanSide">
+          <option value="1">🔵 왼쪽(P1)</option>
+          <option value="2">🔴 오른쪽(P2)</option>
+        </select>
+      </label>
+    </span>
+    <span class="spacer"></span>
+    <button class="primary" id="newgame">새 게임 시작</button>
+  </div>
 
   <div class="scorebar">
     <div class="score p1" id="sc1">
       <b>🔵 왼쪽 팀 (P1)</b>
       <div class="nums" id="n1"></div>
+      <span class="role" id="rl1"></span>
     </div>
     <div class="score p2" id="sc2">
       <b>🔴 오른쪽 팀 (P2)</b>
       <div class="nums" id="n2"></div>
+      <span class="role" id="rl2"></span>
     </div>
   </div>
 
@@ -143,7 +210,13 @@
   </div>
 
   <div class="controls">
+    <button id="undo">↩️ 무르기</button>
     <button class="primary" id="restart">처음부터 다시</button>
+    <label class="atoggle"><input type="checkbox" id="analysis"> 🔍 분석 표시</label>
+    <select id="astrength" title="분석 강도(시뮬레이션 시간)">
+      <option value="fast">분석: 빠름</option>
+      <option value="deep">분석: 정밀</option>
+    </select>
   </div>
 
   <details>
@@ -154,6 +227,7 @@
       <li><b>일반 말</b>: 상하좌우 <b>직선</b>으로만 이동하며, 다른 말이나 벽에 닿으면 멈춥니다.</li>
       <li><b>탈출</b>: 출구를 그냥 지나가는 건 탈출이 아닙니다. 직선 이동 끝에 <b>출구 칸에 딱 멈출 때</b>만 탈출! (즉 출구 바로 뒤에 벽이나 다른 말이 있어야 거기서 멈출 수 있어요.)</li>
       <li><b>헌터(H)</b>: 상하좌우 <b>한 칸</b>씩만 이동. 그 칸에 상대 일반 말이 있으면 즉시 제거합니다. 헌터끼리는 못 잡고, 출구는 지나가거나 탈출할 수 없습니다.</li>
+      <li><b>컴퓨터 대전</b>: 위의 <b>모드 → 사람 vs 컴퓨터</b>를 고르고 난이도(쉬움/보통/어려움/매우 어려움)와 내 진영을 선택한 뒤 <b>새 게임 시작</b>을 누르세요.</li>
       <li><b>조작</b>: 내 말을 클릭 → 갈 수 있는 칸(초록/빨강/탈출 표시)이 보이면 그 칸을 클릭.</li>
     </ul>
   </details>
@@ -185,48 +259,19 @@ function teamTerritory(team, r, c){
   if(!onBoard(r,c)) return false;
   return team===1 ? (c>=1 && c<=3) : (c>=5 && c<=7);
 }
+const DIRS = [[-1,0],[1,0],[0,-1],[0,1]];
+const other = t => t===1?2:1;
 
-//================= 게임 상태 =================
-let pieces, phase, placeTeam, placeStep, moverCount, current, selected, dests, gameMsg;
-
-function freshState(){
-  pieces = [];
-  phase = 'place';      // place | play | over
-  placeTeam = 1;        // 배치 중인 팀
-  placeStep = 'movers'; // movers(번갈아) -> hunters(번갈아)
-  moverCount = {1:0, 2:0};
-  current = 1;          // 플레이 중 차례
-  selected = null;
-  dests = [];
-  gameMsg = '';
-}
-freshState();
-
-function occMap(){
+//================= 순수 계산 함수 (상태를 인자로 받음 → AI 탐색에 재사용) =================
+function occMapOf(pieces){
   const m = {};
   for(const p of pieces) if(p.alive && p.r!=null) m[p.r+','+p.c] = p;
   return m;
 }
-function pieceAt(r,c){ return pieces.find(p=>p.alive && p.r===r && p.c===c); }
+function pieceAtOf(pieces, r, c){ return pieces.find(p=>p.alive && p.r===r && p.c===c); }
 
-const score = {
-  1:{escaped:0, lost:0},
-  2:{escaped:0, lost:0},
-};
-function recomputeScore(){
-  score[1]={escaped:0,lost:0}; score[2]={escaped:0,lost:0};
-  for(const p of pieces){
-    if(p.type!=='mover') continue;
-    if(p.escaped) score[p.team].escaped++;
-    if(p.captured) score[p.team].lost++;
-  }
-}
-
-//================= 이동 계산 =================
-function scanMover(piece, dr, dc){
-  // 출구 칸도 그냥 통과(빈 칸)로 취급한다. 직선 이동 끝에 '멈추는' 칸이
-  // 출구라면(= 출구 바로 뒤가 벽이나 다른 말) 탈출. 그냥 지나가면 탈출 아님.
-  const occ = occMap();
+// 출구 칸도 그냥 통과(빈 칸)로 취급. 직선 이동 끝에 '멈추는' 칸이 출구라면 탈출.
+function scanMoverOf(occ, piece, dr, dc){
   let r=piece.r, c=piece.c, last=null;
   while(true){
     const nr=r+dr, nc=c+dc;
@@ -239,15 +284,13 @@ function scanMover(piece, dr, dc){
   if(isExit(last.r,last.c)) return {r:last.r,c:last.c,kind:'escape'}; // 출구에 멈춤 → 탈출
   return {r:last.r,c:last.c,kind:'move'};
 }
-const DIRS = [[-1,0],[1,0],[0,-1],[0,1]];
-
-function moverDests(piece){
+function moverDestsOf(occ, piece){
   const out=[];
-  for(const [dr,dc] of DIRS){ const d=scanMover(piece,dr,dc); if(d) out.push(d); }
+  for(const [dr,dc] of DIRS){ const d=scanMoverOf(occ,piece,dr,dc); if(d) out.push(d); }
   return out;
 }
-function hunterDests(piece){
-  const occ=occMap(); const out=[];
+function hunterDestsOf(occ, piece){
+  const out=[];
   for(const [dr,dc] of DIRS){
     const nr=piece.r+dr, nc=piece.c+dc;
     if(!onBoard(nr,nc)) continue;
@@ -260,6 +303,81 @@ function hunterDests(piece){
   }
   return out;
 }
+function scoreOf(pieces){
+  const s = {1:{escaped:0,lost:0}, 2:{escaped:0,lost:0}};
+  for(const p of pieces){
+    if(p.type!=='mover') continue;
+    if(p.escaped) s[p.team].escaped++;
+    if(p.captured) s[p.team].lost++;
+  }
+  return s;
+}
+function placeableCellsOf(st){
+  const out=[]; const occ=occMapOf(st.pieces);
+  for(let r=1;r<=7;r++) for(let c=1;c<=7;c++){
+    if(!onBoard(r,c) || occ[r+','+c]) continue;
+    if(st.placeStep==='hunters'){
+      const yz = st.placeTeam===1?yellow1:yellow2;
+      if(yz.has(r+','+c)) out.push([r,c]);
+    } else {
+      // 일반 말: 자기 진영, 출구와 같은 행/열 금지. 노란 구역에도 배치 가능
+      if(teamTerritory(st.placeTeam,r,c) && r!==EXIT.r && c!==EXIT.c) out.push([r,c]);
+    }
+  }
+  return out;
+}
+
+//================= 게임 상태 (UI 전역) =================
+let pieces, phase, placeTeam, placeStep, moverCount, current, selected, dests, gameMsg, lastAi;
+let history = [];   // 무르기용: 각 수를 두기 직전의 전체 상태 스냅샷 스택
+
+// 대전 설정
+let mode = 'pvp';      // 'pvp' | 'pvc'
+let aiTeam = 2;        // 컴퓨터가 맡는 팀(기본: 오른쪽 P2)
+let aiLevel = 'hard';  // 'easy' | 'medium' | 'hard' | 'insane' | 'mcts'
+let aiThinking = false;
+
+// 분석 오버레이 상태 (MCTS 기반 최적수·승률)
+let showAnalysis = false;   // 🔍 분석 표시 토글
+let analyzing = false;      // 분석 계산 중
+let analysisResult = null;  // 현재 위치의 mctsSearch 결과
+let analysisSeq = 0;        // 오래된 비동기 분석 폐기용 토큰
+const analysisCache = new Map(); // positionHash → 결과
+
+const LEVELS = {
+  easy:   {label:'쉬움',       depth:1,  time:0,    noise:0.35, place:'random'},
+  medium: {label:'보통',       depth:4,  time:250,  noise:0.10, place:'heuristic'},
+  hard:   {label:'어려움',     depth:8,  time:500,  noise:0,    place:'eval'},
+  insane: {label:'매우 어려움', depth:12, time:1000, noise:0,    place:'eval'},
+  mcts:   {label:'학습형(MCTS)', engine:'mcts', time:800},
+};
+const WIN = 100000;
+
+function freshState(){
+  pieces = [];
+  phase = 'place';      // place | play | over
+  placeTeam = 1;        // 배치 중인 팀
+  placeStep = 'movers'; // movers(번갈아) -> hunters(번갈아)
+  moverCount = {1:0, 2:0};
+  current = 1;          // 플레이 중 차례
+  selected = null;
+  dests = [];
+  gameMsg = '';
+  lastAi = null;        // AI가 방금 둔 수 강조용 {from:{r,c}, to:{r,c}}
+  history = [];         // 새 게임 시작 시 무르기 기록 초기화
+  analysisResult = null; analyzing = false; analysisSeq++;  // 분석 상태 초기화
+}
+freshState();
+
+// 전역 상태를 사용하는 얇은 래퍼 (기존 UI 코드 호환)
+function occMap(){ return occMapOf(pieces); }
+function pieceAt(r,c){ return pieceAtOf(pieces, r, c); }
+function moverDests(p){ return moverDestsOf(occMap(), p); }
+function hunterDests(p){ return hunterDestsOf(occMap(), p); }
+function placeableCells(){ return placeableCellsOf({pieces, placeStep, placeTeam}); }
+
+const score = { 1:{escaped:0, lost:0}, 2:{escaped:0, lost:0} };
+function recomputeScore(){ const s=scoreOf(pieces); score[1]=s[1]; score[2]=s[2]; }
 
 //================= 렌더링 =================
 const board = document.getElementById('board');
@@ -283,8 +401,8 @@ function cellEl(r,c){ return board.querySelector(`.cell[data-r="${r}"][data-c="$
 function render(){
   // clear dynamic classes & pieces
   board.querySelectorAll('.cell').forEach(el=>{
-    el.classList.remove('placeable','dest','escape','capture');
-    const tok = el.querySelector('.piece'); if(tok) tok.remove();
+    el.classList.remove('placeable','dest','escape','capture','lastfrom','lastto','bestspot','bestfrom');
+    el.querySelectorAll('.piece,.wrbadge').forEach(n=>n.remove());
   });
   // pieces
   for(const p of pieces){
@@ -295,8 +413,13 @@ function render(){
     tok.textContent = p.type==='hunter' ? 'H' : p.num;
     el.appendChild(tok);
   }
+  // AI 마지막 수 강조
+  if(lastAi){
+    if(lastAi.from){ const e=cellEl(lastAi.from.r,lastAi.from.c); if(e) e.classList.add('lastfrom'); }
+    if(lastAi.to){ const e=cellEl(lastAi.to.r,lastAi.to.c); if(e) e.classList.add('lastto'); }
+  }
   // highlights
-  if(phase==='place'){
+  if(phase==='place' && !aiThinking && !isAiTurn()){
     placeableCells().forEach(([r,c])=>cellEl(r,c).classList.add('placeable'));
   } else if(phase==='play' && selected){
     for(const d of dests){
@@ -305,52 +428,73 @@ function render(){
       if(d.kind==='capture') el.classList.add('capture');
     }
   }
+  renderAnalysis();   // 분석 오버레이(승률 배지 + best spot)
   // scores + status
   recomputeScore();
   document.getElementById('n1').textContent = `탈출 ${score[1].escaped}/2 · 잃은 말 ${score[1].lost}/3`;
   document.getElementById('n2').textContent = `탈출 ${score[2].escaped}/2 · 잃은 말 ${score[2].lost}/3`;
+  document.getElementById('rl1').textContent = roleLabel(1);
+  document.getElementById('rl2').textContent = roleLabel(2);
   document.getElementById('sc1').classList.toggle('active', (phase==='place'&&placeTeam===1)||(phase==='play'&&current===1));
   document.getElementById('sc2').classList.toggle('active', (phase==='place'&&placeTeam===2)||(phase==='play'&&current===2));
   document.getElementById('status').innerHTML = statusText();
+  const ub = document.getElementById('undo'); if(ub) ub.disabled = !canUndo();
 }
 
+function roleLabel(t){
+  if(mode!=='pvc') return '🙂 사람';
+  return t===aiTeam ? ('🤖 컴퓨터 · '+LEVELS[aiLevel].label) : '🙂 사람 (당신)';
+}
 function teamTag(t){ return t===1?'<b class="blue">왼쪽 팀(P1)</b>':'<b class="red">오른쪽 팀(P2)</b>'; }
 
 function statusText(){
   if(phase==='over') return gameMsg;
+  if(aiThinking) return `<span class="thinking">🤖 컴퓨터(${LEVELS[aiLevel].label})가 생각 중...</span>`;
+  const youHint = (mode==='pvc' && !isAiTurn()) ? ' <span style="color:#2f8f5f">(당신 차례)</span>' : '';
+  let base;
   if(phase==='place'){
     const who=teamTag(placeTeam);
-    if(placeStep==='movers')
-      return `${who} 차례 — <b>일반 말 ${moverCount[placeTeam]+1}/5</b>를 놓으세요. (양 팀 번갈아 배치)`;
-    return `${who} 차례 — <b>헌터</b>를 노란 구역에 놓으세요. (양 팀 번갈아 배치)`;
+    base = placeStep==='movers'
+      ? `${who} 차례 — <b>일반 말 ${moverCount[placeTeam]+1}/5</b>를 놓으세요.${youHint}`
+      : `${who} 차례 — <b>헌터</b>를 노란 구역에 놓으세요.${youHint}`;
+  } else {
+    base = `${teamTag(current)} 차례 — 움직일 내 말을 클릭하세요.${youHint}` + (gameMsg?`<br>${gameMsg}`:'');
   }
-  return `${teamTag(current)} 차례 — 움직일 내 말을 클릭하세요.` + (gameMsg?`<br>${gameMsg}`:'');
+  return base + analysisText();
+}
+
+// 분석 안내 텍스트(추천 수 + 상위 3수 승률)
+function describeMove(mv){
+  if(mv.kind==='place') return `(${mv.r},${mv.c}) 배치`;
+  const p = pieces.find(x=>x.id===mv.pieceId);
+  const who = p ? (p.type==='hunter' ? '헌터' : p.num+'번 말') : '말';
+  const act = mv.to.kind==='escape' ? '탈출' : mv.to.kind==='capture' ? '제거' : `(${mv.to.r},${mv.to.c})`;
+  return `${who} ${act}`;
+}
+function analysisText(){
+  if(!showAnalysis) return '';
+  if(analyzing) return `<br><span class="thinking">🔍 분석 중...</span>`;
+  if(!analysisResult || !analysisResult.moves.length) return '';
+  const top = analysisResult.moves.slice(0,3);
+  let html = `<br>🔍 <b>추천: ${describeMove(top[0].mv)}</b> · 승률 <b>${top[0].winPct}%</b>`;
+  if(top.length>1){
+    html += ` <span style="color:#888">(다음: ` +
+      top.slice(1).map(m=>`${describeMove(m.mv)} ${m.winPct}%`).join(', ') + `)</span>`;
+  }
+  html += ` <span style="color:#aaa;font-size:11px">[${analysisResult.iters.toLocaleString()}회 시뮬]</span>`;
+  return html;
 }
 
 //================= 배치 단계 =================
-function placeableCells(){
-  const out=[]; const occ=occMap();
-  for(let r=1;r<=7;r++) for(let c=1;c<=7;c++){
-    if(!onBoard(r,c) || occ[r+','+c]) continue;
-    if(placeStep==='hunters'){
-      const yz = placeTeam===1?yellow1:yellow2;
-      if(yz.has(r+','+c)) out.push([r,c]);
-    } else {
-      // 일반 말: 자기 진영, 출구와 같은 행/열 금지(규칙 9). 노란 구역에도 배치 가능
-      if(teamTerritory(placeTeam,r,c) && r!==EXIT.r && c!==EXIT.c) out.push([r,c]);
-    }
-  }
-  return out;
-}
-
 function placePiece(r,c){
+  pushHistory();
   if(placeStep==='movers'){
     moverCount[placeTeam]++;
     pieces.push({id:pieces.length, team:placeTeam, type:'mover', num:moverCount[placeTeam], r, c, alive:true, escaped:false, captured:false});
     if(moverCount[1]>=5 && moverCount[2]>=5){
       placeStep='hunters'; placeTeam=1;        // 일반 말 끝 → 헌터 배치(번갈아)
     } else {
-      placeTeam = placeTeam===1?2:1;            // 팀 교대
+      placeTeam = other(placeTeam);            // 팀 교대
     }
   } else { // hunters
     pieces.push({id:pieces.length, team:placeTeam, type:'hunter', num:'H', r, c, alive:true, escaped:false, captured:false});
@@ -358,10 +502,15 @@ function placePiece(r,c){
     else { phase='play'; current=1; gameMsg=''; } // 둘 다 배치 완료 → 시작
   }
   render();
+  maybeAiTurn();
+  requestAnalysis();
 }
 
 //================= 클릭 처리 =================
 function onCellClick(r,c){
+  if(aiThinking) return;            // AI 사고 중 입력 차단
+  if(isAiTurn()) return;            // 지금은 컴퓨터 차례
+
   if(phase==='place'){
     if(placeableCells().some(([pr,pc])=>pr===r&&pc===c)) placePiece(r,c);
     return;
@@ -386,13 +535,21 @@ function onCellClick(r,c){
 }
 
 function doMove(p, d){
+  pushHistory();
   gameMsg='';
+  lastAi = null;
+  const from = {r:p.r, c:p.c};
+  // 컴퓨터가 둔 수면 마지막 수 강조 좌표 기록
+  const byAi = (mode==='pvc' && p.team===aiTeam);
+
   if(p.type==='mover'){
     if(d.kind==='escape'){
       p.escaped=true; p.alive=false; p.r=null; p.c=null;
       gameMsg = `${teamTag(p.team)}의 ${p.num}번 말이 출구로 탈출했습니다! 🚪`;
+      if(byAi) lastAi = {from, to:{r:EXIT.r, c:EXIT.c}};
     } else {
       p.r=d.r; p.c=d.c;
+      if(byAi) lastAi = {from, to:{r:d.r, c:d.c}};
     }
   } else { // hunter
     if(d.kind==='capture'){
@@ -401,8 +558,10 @@ function doMove(p, d){
       const tr=t.r, tc=t.c; t.r=null; t.c=null;
       p.r=tr; p.c=tc;
       gameMsg = `헌터가 ${teamTag(t.team)}의 ${t.num}번 말을 제거했습니다! ✕`;
+      if(byAi) lastAi = {from, to:{r:tr, c:tc}};
     } else {
       p.r=d.r; p.c=d.c;
+      if(byAi) lastAi = {from, to:{r:d.r, c:d.c}};
     }
   }
   selected=null; dests=[];
@@ -413,20 +572,567 @@ function doMove(p, d){
   if(score[1].lost>=3){ return endGame(2, `상대 일반 말 3명 제거!`); }
   if(score[2].lost>=3){ return endGame(1, `상대 일반 말 3명 제거!`); }
 
-  current = current===1?2:1;
+  current = other(current);
   render();
+  maybeAiTurn();
+  requestAnalysis();
 }
 
 function endGame(team, reason){
   phase='over';
-  const tag = team===1?'🔵 왼쪽 팀(P1)':'🔴 오른쪽 팀(P2)';
-  gameMsg = `<b style="font-size:16px">🎉 ${tag} 승리!</b><br>${reason} <span style="color:#666">— "처음부터 다시"로 새 게임</span>`;
+  if(team===0){
+    gameMsg = `<b style="font-size:16px">🤝 무승부</b><br>${reason} <span style="color:#666">— "처음부터 다시"로 새 게임</span>`;
+  } else {
+    const tag = team===1?'🔵 왼쪽 팀(P1)':'🔴 오른쪽 팀(P2)';
+    gameMsg = `<b style="font-size:16px">🎉 ${tag} 승리!</b><br>${reason} <span style="color:#666">— "처음부터 다시"로 새 게임</span>`;
+  }
   selected=null; dests=[];
+  analysisResult=null; analyzing=false;
   render();
 }
 
-//================= 시작 =================
-document.getElementById('restart').addEventListener('click', ()=>{ freshState(); render(); });
+//================= 무르기(Undo) =================
+function pushHistory(){
+  history.push({
+    pieces: pieces.map(p=>({...p})),
+    phase, placeTeam, placeStep,
+    moverCount: {1:moverCount[1], 2:moverCount[2]},
+    current, gameMsg,
+    lastAi: lastAi ? {from: lastAi.from?{...lastAi.from}:null, to: lastAi.to?{...lastAi.to}:null} : null,
+  });
+}
+function restoreHistory(h){
+  pieces = h.pieces.map(p=>({...p}));
+  phase = h.phase; placeTeam = h.placeTeam; placeStep = h.placeStep;
+  moverCount = {1:h.moverCount[1], 2:h.moverCount[2]};
+  current = h.current; gameMsg = h.gameMsg;
+  selected = null; dests = [];
+}
+// 되돌린 상태에서 둘 차례가 컴퓨터인가?
+function aiToAct(){
+  return mode==='pvc' && (phase==='place' ? placeTeam===aiTeam : current===aiTeam);
+}
+function canUndo(){
+  if(aiThinking) return false;          // 컴퓨터 사고 중엔 불가
+  if(history.length===0) return false;
+  if(mode==='pvp') return true;
+  // 컴퓨터 대전: 사람이 둔 수가 하나라도 있어야 무를 수 있음
+  return history.some(h => (h.phase==='place' ? h.placeTeam : h.current) !== aiTeam);
+}
+function undo(){
+  if(!canUndo()) return;
+  if(mode==='pvp'){
+    restoreHistory(history.pop());      // 1수 되돌림
+  } else {
+    // 사람 차례가 될 때까지 되돌림(직전 컴퓨터 수 + 내 수)
+    do { restoreHistory(history.pop()); }
+    while(history.length>0 && aiToAct());
+  }
+  lastAi = null;
+  render();
+  requestAnalysis();
+}
+
+//=====================================================================
+//================= 컴퓨터(AI) 엔진 ====================================
+//=====================================================================
+
+// 현재 전역 상태 → 탐색용 가벼운 스냅샷
+function snapshot(){
+  return {
+    pieces: pieces.map(p=>({id:p.id, team:p.team, type:p.type, num:p.num, r:p.r, c:p.c, alive:p.alive, escaped:p.escaped, captured:p.captured})),
+    phase, placeTeam, placeStep, moverCount:{1:moverCount[1], 2:moverCount[2]}, current, winner:0
+  };
+}
+function cloneSim(s){
+  return {
+    pieces: s.pieces.map(p=>({id:p.id, team:p.team, type:p.type, num:p.num, r:p.r, c:p.c, alive:p.alive, escaped:p.escaped, captured:p.captured})),
+    phase:s.phase, placeTeam:s.placeTeam, placeStep:s.placeStep,
+    moverCount:{1:s.moverCount[1], 2:s.moverCount[2]}, current:s.current, winner:s.winner
+  };
+}
+
+// --- 이동 국면: 수 생성 / 적용 ---
+function genPlayMoves(s){
+  const occ = occMapOf(s.pieces);
+  const out=[];
+  for(const p of s.pieces){
+    if(!p.alive || p.team!==s.current) continue;
+    const ds = p.type==='hunter' ? hunterDestsOf(occ,p) : moverDestsOf(occ,p);
+    for(const d of ds) out.push({pieceId:p.id, to:d});
+  }
+  return out;
+}
+function applyPlay(s, mv){
+  const p = s.pieces.find(x=>x.id===mv.pieceId);
+  const d = mv.to;
+  if(p.type==='mover'){
+    if(d.kind==='escape'){ p.escaped=true; p.alive=false; p.r=null; p.c=null; }
+    else { p.r=d.r; p.c=d.c; }
+  } else {
+    if(d.kind==='capture'){
+      const t=s.pieces.find(x=>x.id===d.target);
+      const tr=t.r, tc=t.c; t.captured=true; t.alive=false; t.r=null; t.c=null;
+      p.r=tr; p.c=tc;
+    } else { p.r=d.r; p.c=d.c; }
+  }
+  const sc=scoreOf(s.pieces);
+  if(sc[p.team].escaped>=2){ s.phase='over'; s.winner=p.team; }
+  else if(sc[1].lost>=3){ s.phase='over'; s.winner=2; }
+  else if(sc[2].lost>=3){ s.phase='over'; s.winner=1; }
+  else { s.current = other(s.current); }
+  return s;
+}
+
+// --- 배치 국면: 수 생성 / 적용 ---
+function genPlacements(s){ return placeableCellsOf(s).map(([r,c])=>({r,c})); }
+function applyPlacement(s, mv){
+  const team=s.placeTeam;
+  if(s.placeStep==='movers'){
+    s.moverCount[team]++;
+    s.pieces.push({id:s.pieces.length, team, type:'mover', num:s.moverCount[team], r:mv.r, c:mv.c, alive:true, escaped:false, captured:false});
+    if(s.moverCount[1]>=5 && s.moverCount[2]>=5){ s.placeStep='hunters'; s.placeTeam=1; }
+    else { s.placeTeam=other(team); }
+  } else {
+    s.pieces.push({id:s.pieces.length, team, type:'hunter', num:'H', r:mv.r, c:mv.c, alive:true, escaped:false, captured:false});
+    if(team===1){ s.placeTeam=2; } else { s.phase='play'; s.current=1; }
+  }
+  return s;
+}
+
+// --- 평가 함수: 양수 = AI(aiT)에게 유리 ---
+function evaluate(s, aiT){
+  const opp = other(aiT);
+  const occ = occMapOf(s.pieces);
+  const sc = scoreOf(s.pieces);
+  let e = 0;
+  // 승패 직결 (탈출은 2개, 제거는 3개면 승 → 탈출 가중치를 살짝 높게)
+  e += 1500*(sc[aiT].escaped - sc[opp].escaped);
+  e += 1000*(sc[opp].lost   - sc[aiT].lost);
+
+  // 적/아군 헌터가 지금 잡을 수 있는 말 목록 (targetId → 헌터팀)
+  const threat = {};
+  for(const h of s.pieces){
+    if(h.type==='hunter' && h.alive){
+      for(const d of hunterDestsOf(occ,h)) if(d.kind==='capture') threat[d.target]=h.team;
+    }
+  }
+  for(const p of s.pieces){
+    if(p.type!=='mover' || !p.alive) continue;
+    const sign = p.team===aiT ? 1 : -1;
+    // 이번 수에 출구로 탈출 가능(강력한 위협)
+    if(moverDestsOf(occ,p).some(d=>d.kind==='escape')) e += sign*130;
+    // 출구 근접도(가까울수록 +)
+    e -= sign*4*(Math.abs(p.r-EXIT.r)+Math.abs(p.c-EXIT.c));
+    // 적 헌터에게 곧 잡힐 위험
+    if(threat[p.id]!==undefined){
+      e += sign*(-70);
+      if(s.current===threat[p.id]) e += sign*(-50); // 그 헌터 차례면 임박
+    }
+  }
+  return e;
+}
+
+function terminalVal(s, aiT, depthLeft){
+  if(s.phase!=='over') return null;
+  return s.winner===aiT ? (WIN+depthLeft) : -(WIN+depthLeft);
+}
+
+// 알파-베타 가지치기를 돕는 수 정렬(좋아 보이는 수 먼저)
+function orderPlay(moves){
+  const rank = m => m.to.kind==='escape' ? 100
+              : m.to.kind==='capture' ? 80
+              : 10 - (Math.abs(m.to.r-EXIT.r)+Math.abs(m.to.c-EXIT.c));
+  return moves.slice().sort((a,b)=>rank(b)-rank(a));
+}
+
+// 미니맥스 + 알파-베타 (시간 예산 초과 시 SEARCH_DEADLINE로 중단)
+let SEARCH_DEADLINE = Infinity, searchNodes = 0;
+function searchPlay(s, depth, alpha, beta, aiT){
+  if(((++searchNodes) & 1023)===0 && performance.now() > SEARCH_DEADLINE) throw 'TIMEOUT';
+  const t = terminalVal(s, aiT, depth);
+  if(t!==null) return {score:t, move:null};
+  if(depth===0) return {score:evaluate(s,aiT), move:null};
+  let moves = genPlayMoves(s);
+  if(moves.length===0){ // 둘 수 없음 → 패스
+    const ns=cloneSim(s); ns.current=other(ns.current);
+    return {score: searchPlay(ns, depth-1, alpha, beta, aiT).score, move:null};
+  }
+  moves = orderPlay(moves);
+  const maxing = (s.current===aiT);
+  let best = maxing ? -Infinity : Infinity, bestMove=moves[0];
+  for(const mv of moves){
+    const val = searchPlay(applyPlay(cloneSim(s), mv), depth-1, alpha, beta, aiT).score;
+    if(maxing){ if(val>best){best=val;bestMove=mv;} if(best>alpha) alpha=best; }
+    else      { if(val<best){best=val;bestMove=mv;} if(best<beta)  beta=best; }
+    if(beta<=alpha) break;
+  }
+  return {score:best, move:bestMove};
+}
+
+const randInt = n => Math.floor(Math.random()*n);
+
+// 1수 그리디(쉬움): 즉시 평가만으로 최선/약간의 무작위
+function greedyPlay(s, moves, noise){
+  if(noise && Math.random()<noise) return moves[randInt(moves.length)];
+  let best=-Infinity, ties=[];
+  for(const mv of moves){
+    const ns = applyPlay(cloneSim(s), mv);
+    const v = (ns.phase==='over' && ns.winner===aiTeam) ? WIN+50 : evaluate(ns, aiTeam);
+    if(v>best+1e-9){ best=v; ties=[mv]; }
+    else if(Math.abs(v-best)<=1e-9){ ties.push(mv); }
+  }
+  return ties[randInt(ties.length)];
+}
+
+// 이동 국면에서 컴퓨터가 둘 수 선택
+function aiPlayChoice(s, level){
+  const cfg = LEVELS[level];
+  const moves = genPlayMoves(s);
+  if(moves.length===0) return null;
+  if(moves.length===1) return moves[0];
+
+  if(cfg.depth<=1) return greedyPlay(s, moves, cfg.noise);
+
+  // 반복 심화 + 시간 예산 (탐색 내부에서 마감시간 초과 시 중단, 직전 깊이 결과 사용)
+  const start = performance.now();
+  SEARCH_DEADLINE = start + cfg.time;
+  let chosen = null;
+  for(let d=2; d<=cfg.depth; d++){
+    try{
+      searchNodes = 0;
+      const r = searchPlay(cloneSim(s), d, -Infinity, Infinity, aiTeam);
+      if(r.move) chosen = r.move;
+      if(Math.abs(r.score) >= WIN) break;                // 확정 승/패 발견
+      if(performance.now() >= SEARCH_DEADLINE) break;     // 예산 소진
+    } catch(err){ if(err==='TIMEOUT') break; throw err; } // 미완료 깊이는 버림
+  }
+  SEARCH_DEADLINE = Infinity;
+  if(cfg.noise && Math.random()<cfg.noise) return moves[randInt(moves.length)];
+  return chosen || moves[0];
+}
+
+// 배치용 휴리스틱(보통)
+function placeHeuristic(s, mv){
+  const team=s.placeTeam, r=mv.r, c=mv.c;
+  let v=0;
+  if(s.placeStep==='hunters'){
+    v += 10 - (Math.abs(r-EXIT.r)+Math.abs(c-EXIT.c)); // 출구에 가까운 노란칸 선호
+  } else {
+    v += 8 - Math.abs(c-EXIT.c)*1.5;   // 중앙(전진) 선호
+    v += 6 - Math.abs(r-EXIT.r);       // 중앙 행 = 경로 많음
+    for(const p of s.pieces) if(p.team===team && p.alive){
+      const d=Math.abs(p.r-r)+Math.abs(p.c-c);
+      if(d<=1) v-=3;                    // 뭉치지 않게 분산
+    }
+  }
+  return v;
+}
+
+// 배치 국면에서 컴퓨터가 놓을 칸 선택
+function aiPlaceChoice(s, level){
+  const cfg = LEVELS[level];
+  const cands = genPlacements(s);
+  if(cands.length<=1) return cands[0] || null;
+  if(cfg.place==='random') return cands[randInt(cands.length)];
+
+  let best=-Infinity, ties=[];
+  for(const mv of cands){
+    let v;
+    if(cfg.place==='heuristic') v = placeHeuristic(s, mv);
+    else { // 'eval' : 놓은 직후 위치 평가
+      const ns = applyPlacement(cloneSim(s), {r:mv.r, c:mv.c});
+      v = evaluate(ns, aiTeam);
+    }
+    if(v>best+1e-9){ best=v; ties=[mv]; }
+    else if(Math.abs(v-best)<=1e-9){ ties.push(mv); }
+  }
+  if(cfg.noise && Math.random()<cfg.noise) return cands[randInt(cands.length)];
+  return ties[randInt(ties.length)];
+}
+
+//=====================================================================
+//============ MCTS 엔진 (배치+이동 통합, 자가시뮬레이션 승률) ============
+//=====================================================================
+// 신경망 없이 몬테카를로 트리 탐색으로 "각 수를 수천 번 시뮬레이션 → 승률%"를 산출.
+// 향후 AlphaZero 확장 seam: rolloutZ1(가치)·rolloutPolicyMove(정책)을 신경망 출력으로
+// 교체하고 selectChild를 UCT→PUCT로 바꾸면 그대로 AlphaZero가 됨.
+
+// --- 국면 무관 통합 수 API (기존 배치/이동 함수에 위임) ---
+function sideToMove(s){ return s.phase==='place' ? s.placeTeam : s.current; }
+function genMoves(s){
+  if(s.phase==='over') return [];
+  if(s.phase==='place') return genPlacements(s).map(m=>({kind:'place', r:m.r, c:m.c}));
+  return genPlayMoves(s).map(m=>({kind:'play', pieceId:m.pieceId, to:m.to}));
+}
+function applyMove(s, mv){            // s를 직접 변형(호출자가 필요시 clone)
+  return mv.kind==='place' ? applyPlacement(s, {r:mv.r, c:mv.c})
+                           : applyPlay(s, {pieceId:mv.pieceId, to:mv.to});
+}
+function moveKey(mv){
+  return mv.kind==='place' ? ('p:'+mv.r+','+mv.c)
+                           : ('m:'+mv.pieceId+'>'+mv.to.r+','+mv.to.c+','+mv.to.kind);
+}
+
+// --- 롤아웃(플레이아웃) 정책: ε-그리디 휴리스틱 ---
+const ROLLOUT_MAX = 70;
+function rolloutPolicyMove(s, moves, sc){
+  const me = sideToMove(s);
+  if(s.phase==='play'){
+    // 즉시 승리 수 우선 (clone 없이 점수로 판단)
+    for(const mv of moves){
+      const t=mv.to;
+      if(t.kind==='escape'  && sc[me].escaped>=1)        return mv; // 2번째 탈출 → 승
+      if(t.kind==='capture' && sc[other(me)].lost>=2)    return mv; // 3번째 제거 → 승
+    }
+    if(Math.random()<0.25) return moves[randInt(moves.length)];
+    let best=-Infinity, pick=moves[0];
+    for(const mv of moves){
+      const t=mv.to;
+      let w = t.kind==='escape' ? 100 : t.kind==='capture' ? 60
+            : (8 - (Math.abs(t.r-EXIT.r)+Math.abs(t.c-EXIT.c)));
+      w += Math.random()*3;
+      if(w>best){ best=w; pick=mv; }
+    }
+    return pick;
+  } else { // 배치
+    if(Math.random()<0.3) return moves[randInt(moves.length)];
+    let best=-Infinity, pick=moves[0];
+    for(const mv of moves){
+      const w = placeHeuristic(s, {r:mv.r, c:mv.c}) + Math.random()*2;
+      if(w>best){ best=w; pick=mv; }
+    }
+    return pick;
+  }
+}
+// 한 판 끝까지 시뮬레이션 → team1 관점 결과값 z1 ∈ [-1,1]
+function rolloutZ1(s0){
+  let s = cloneSim(s0);
+  for(let ply=0; ply<ROLLOUT_MAX && s.phase!=='over'; ply++){
+    const moves = genMoves(s);
+    if(moves.length===0){ if(s.phase==='play'){ s.current=other(s.current); continue; } break; }
+    const sc = scoreOf(s.pieces);
+    applyMove(s, rolloutPolicyMove(s, moves, sc));
+  }
+  if(s.phase==='over') return s.winner===1 ? 1 : s.winner===2 ? -1 : 0;
+  // 길이 초과 → evaluate(team1) 부호/스케일을 [-0.9,0.9]로 압축
+  return Math.max(-0.9, Math.min(0.9, evaluate(s, 1)/1500));
+}
+
+// --- MCTS 트리 (값은 team1 절대 기준 W1 누적 → 부호 혼동 방지) ---
+function makeNode(s, move){
+  return { move: move||null, parent:null, children:[], untried: genMoves(s),
+           N:0, W1:0, toMove: s.phase==='over' ? 0 : sideToMove(s) };
+}
+function selectChild(node, C){
+  const sign = node.toMove===1 ? 1 : -1;     // node에서 둘 차례 팀 관점
+  const lnN = Math.log(node.N+1);
+  let best=-Infinity, bestCh=node.children[0];
+  for(const ch of node.children){
+    const q = sign * (ch.W1/ch.N);            // 둘 차례 팀 관점 평균 가치
+    const u = q + C*Math.sqrt(lnN/ch.N);
+    if(u>best){ best=u; bestCh=ch; }
+  }
+  return bestCh;
+}
+// rootSnapshot에서 MCTS 실행 → {moves:[{mv,visits,valueMean,winPct}], bestMove, bestWinPct, iters}
+function mctsSearch(root, opts){
+  opts = opts||{};
+  const timeMs = opts.timeMs||600, maxIters = opts.maxIters||100000, C = opts.C||1.4;
+  const rootNode = makeNode(root);
+  const start = performance.now();
+  let iters = 0;
+  while(iters < maxIters){
+    if((iters & 31)===0 && performance.now()-start > timeMs) break;
+    iters++;
+    let node = rootNode;
+    const s = cloneSim(root);
+    // 1) Selection
+    while(node.untried.length===0 && node.children.length>0 && s.phase!=='over'){
+      node = selectChild(node, C);
+      applyMove(s, node.move);
+    }
+    // 2) Expansion
+    if(s.phase!=='over' && node.untried.length>0){
+      const mv = node.untried.splice(randInt(node.untried.length), 1)[0];
+      applyMove(s, mv);
+      const child = makeNode(s, mv);
+      child.parent = node;
+      node.children.push(child);
+      node = child;
+    }
+    // 3) Simulation
+    const z1 = (s.phase==='over') ? (s.winner===1?1:s.winner===2?-1:0) : rolloutZ1(s);
+    // 4) Backprop (team1 절대 기준)
+    for(let n=node; n; n=n.parent){ n.N++; n.W1 += z1; }
+  }
+  const sign = sideToMove(root)===1 ? 1 : -1;   // 루트에서 둘 차례 팀
+  const stats = rootNode.children.map(ch=>{
+    const qme = sign * (ch.N>0 ? ch.W1/ch.N : 0);  // 루트 둘 차례 팀 관점
+    return { mv: ch.move, visits: ch.N, valueMean: qme, winPct: Math.round((qme+1)/2*100) };
+  }).sort((a,b)=> (b.visits-a.visits) || (b.valueMean-a.valueMean));
+  return {
+    iters,
+    moves: stats,
+    bestMove: stats.length ? stats[0].mv : null,
+    bestWinPct: stats.length ? stats[0].winPct : 50,
+  };
+}
+
+//=====================================================================
+//================= 분석 오버레이 (최적수·승률 표시) ==================
+//=====================================================================
+function winColor(pct){
+  return pct>=65 ? '#1668ff' : pct>=50 ? '#2e9e5b' : pct>=35 ? '#d8901f' : '#d8453d';
+}
+function addBadge(r, c, pct){
+  const el = cellEl(r,c); if(!el) return;
+  const b = document.createElement('div');
+  b.className = 'wrbadge'; b.textContent = pct+'%';
+  b.style.background = winColor(pct);
+  el.appendChild(b);
+}
+// render() 안에서 호출: 캐시된 분석 결과를 보드에 그림
+function renderAnalysis(){
+  if(!showAnalysis || !analysisResult) return;
+  const res = analysisResult, bm = res.bestMove;
+  if(phase==='place'){
+    for(const m of res.moves) addBadge(m.mv.r, m.mv.c, m.winPct);        // 위치별 승률
+    if(bm){ const el=cellEl(bm.r, bm.c); if(el) el.classList.add('bestspot'); }
+  } else if(phase==='play'){
+    if(bm){                                                              // 전역 최적수 강조
+      const p = pieces.find(x=>x.id===bm.pieceId);
+      if(p){ const ef=cellEl(p.r, p.c); if(ef) ef.classList.add('bestfrom'); }
+      const et = cellEl(bm.to.r, bm.to.c); if(et) et.classList.add('bestspot');
+    }
+    if(selected){                                                        // 선택한 말의 수별 승률
+      for(const m of res.moves){
+        if(m.mv.pieceId!==selected.id) continue;
+        addBadge(m.mv.to.r, m.mv.to.c, m.winPct);
+      }
+    }
+  }
+}
+
+// 위치 식별 해시(캐시 키)
+function hashState(s){
+  let k = s.phase+'|'+sideToMove(s)+'|'+s.placeStep+'|'+s.moverCount[1]+','+s.moverCount[2]+'|';
+  for(const p of s.pieces){
+    k += p.id + (p.alive ? (':'+p.r+','+p.c) : (p.escaped?':E':p.captured?':X':':_')) + ';';
+  }
+  return k;
+}
+function analysisBudgetMs(){
+  const sel = document.getElementById('astrength');
+  return (sel && sel.value==='deep') ? 1100 : 450;
+}
+// 위치 변경/토글 시 호출: 캐시 조회 → 없으면 비동기로 MCTS 분석
+function requestAnalysis(){
+  analysisResult = null;
+  if(!showAnalysis || phase==='over' || aiThinking || isAiTurn()){ analyzing=false; render(); return; }
+  const snap = snapshot();
+  if(genMoves(snap).length===0){ analyzing=false; render(); return; }
+  const key = hashState(snap);
+  if(analysisCache.has(key)){ analysisResult = analysisCache.get(key); analyzing=false; render(); return; }
+  const seq = ++analysisSeq;
+  analyzing = true; render();                    // "분석 중" 먼저 표시
+  setTimeout(()=>{
+    if(seq!==analysisSeq) return;                // 더 최신 요청이 있으면 폐기
+    const res = mctsSearch(snap, {timeMs: analysisBudgetMs()});
+    analysisCache.set(key, res);
+    if(seq!==analysisSeq) return;
+    analysisResult = res; analyzing = false; render();
+  }, 30);
+}
+
+//================= AI 차례 구동 =================
+function isAiTurn(){
+  if(mode!=='pvc' || phase==='over') return false;
+  return phase==='place' ? placeTeam===aiTeam : current===aiTeam;
+}
+function sideHasMove(team){
+  const s = snapshot(); s.current = team;
+  return genPlayMoves(s).length>0;
+}
+
+function maybeAiTurn(){
+  if(phase==='over') return;
+  if(isAiTurn()){ scheduleAi(); return; }
+  // 사람 차례인데 둘 말이 없으면(아주 드묾) 자동 패스
+  if(phase==='play' && mode==='pvc' && !sideHasMove(current)){
+    gameMsg = `${teamTag(current)} 둘 수 있는 말이 없어 차례를 넘깁니다.`;
+    render();
+    setTimeout(passTurn, 800);
+  }
+}
+function scheduleAi(){
+  aiThinking = true;
+  render();                 // "생각 중" 표시를 먼저 그림
+  setTimeout(runAi, 220);
+}
+function runAi(){
+  if(!isAiTurn()){ aiThinking=false; render(); return; }
+  // MCTS 엔진 난이도: 배치·이동 모두 통합 수로 처리
+  if(LEVELS[aiLevel].engine==='mcts'){
+    const res = mctsSearch(snapshot(), {timeMs: LEVELS[aiLevel].time});
+    aiThinking = false;
+    const mv = res.bestMove;
+    if(!mv){ if(phase==='play') passTurn(); else render(); return; }
+    if(mv.kind==='place') placePiece(mv.r, mv.c);
+    else { const p = pieces.find(x=>x.id===mv.pieceId); doMove(p, mv.to); }
+    return;
+  }
+  if(phase==='place'){
+    const c = aiPlaceChoice(snapshot(), aiLevel);
+    aiThinking = false;
+    if(c) placePiece(c.r, c.c); else { aiThinking=false; render(); }
+  } else {
+    const mv = aiPlayChoice(snapshot(), aiLevel);
+    aiThinking = false;
+    if(!mv){ passTurn(); }
+    else {
+      const p = pieces.find(x=>x.id===mv.pieceId);
+      doMove(p, mv.to);
+    }
+  }
+}
+function passTurn(){
+  if(phase!=='play') return;
+  const nxt = other(current);
+  if(!sideHasMove(current) && !sideHasMove(nxt)){
+    return endGame(0, '양 팀 모두 둘 수 있는 말이 없습니다.');
+  }
+  pushHistory();
+  current = nxt; selected=null; dests=[];
+  render();
+  maybeAiTurn();
+  requestAnalysis();
+}
+
+//================= 설정 적용 / 시작 =================
+const $ = id => document.getElementById(id);
+function syncSetupVisibility(){
+  $('aiopts').style.display = $('mode').value==='pvc' ? 'flex' : 'none';
+}
+function applySetup(){
+  mode = $('mode').value;
+  aiLevel = $('level').value;
+  const humanSide = parseInt($('humanSide').value, 10);
+  aiTeam = humanSide===1 ? 2 : 1;
+  syncSetupVisibility();
+  freshState();
+  render();
+  maybeAiTurn();          // 컴퓨터가 선(先)이면 바로 시작
+  requestAnalysis();
+}
+
+$('mode').addEventListener('change', syncSetupVisibility);
+$('newgame').addEventListener('click', applySetup);
+$('restart').addEventListener('click', applySetup); // 현재 설정으로 새 게임
+$('undo').addEventListener('click', undo);
+$('analysis').addEventListener('change', ()=>{ showAnalysis = $('analysis').checked; requestAnalysis(); });
+$('astrength').addEventListener('change', ()=>{ analysisCache.clear(); requestAnalysis(); });
+
 buildGrid();
 render();
 </script>
