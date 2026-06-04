@@ -225,9 +225,11 @@
     <button id="undo">↩️ 무르기</button>
     <button class="primary" id="restart">처음부터 다시</button>
     <label class="atoggle"><input type="checkbox" id="analysis"> 🔍 분석 표시</label>
-    <select id="astrength" title="분석 강도(시뮬레이션 시간)">
+    <select id="astrength" title="분석 강도(시뮬레이션 시간/깊이)">
       <option value="fast">분석: 빠름</option>
       <option value="deep" selected>분석: 정밀</option>
+      <option value="deeper">분석: 심층</option>
+      <option value="max">분석: 무제한(계속)</option>
     </select>
   </div>
 
@@ -1052,11 +1054,12 @@ function hashState(s){
   return k;
 }
 function analysisBudgetMs(){
-  const sel = document.getElementById('astrength');
-  const deep = !!(sel && sel.value==='deep');
-  // 배치 국면은 경우의 수가 많아(노이즈 큼) 더 긴 예산을 배정
-  if(phase==='place') return deep ? 1500 : 800;
-  return deep ? 1100 : 450;
+  const v = (document.getElementById('astrength')||{}).value;
+  if(v==='max') return Infinity;                    // 무제한: 둘 때까지 계속 분석
+  // {배치 p, 이동 m} 예산(ms) — 배치는 경우의 수가 많아 더 길게
+  const tiers = { fast:{p:800,m:450}, deep:{p:1500,m:1100}, deeper:{p:4000,m:3000} };
+  const t = tiers[v] || tiers.deep;
+  return phase==='place' ? t.p : t.m;
 }
 // 승률 추이 기록(P1=블루 관점). ply=history.length로 무르기 시 자동 정리
 function recordTrend(snap){
@@ -1091,34 +1094,31 @@ function renderWinTrend(){
 }
 // 위치 변경/토글 시 호출: 캐시 조회 → 없으면 비동기로 MCTS 분석
 function requestAnalysis(){
+  const seq = ++analysisSeq;                     // 새 요청 → 진행 중이던 스트림(무제한 포함) 즉시 중단
   analysisResult = null;
   if(!showAnalysis || phase==='over' || aiThinking || isAiTurn()){ analyzing=false; render(); return; }
   const snap = snapshot();
   if(genMoves(snap).length===0){ analyzing=false; render(); return; }
   const key = hashState(snap);
   if(analysisCache.has(key)){ analysisResult = analysisCache.get(key); analyzing=false; recordTrend(snap); render(); return; }
-  const seq = ++analysisSeq;
   // 실시간 스트리밍 분석(알파고식): 시뮬을 조금씩 누적하며 승률·최적수·횟수를 라이브 갱신
   analyzing = true; render();                    // 첫 청크 전엔 "분석 중"
   const ctx = mctsInit(snap, {});
-  const budget = analysisBudgetMs();
+  const budget = analysisBudgetMs();             // 숫자(ms) 또는 Infinity(무제한)
+  const ITER_CAP = 150000;                       // 무제한 안전 상한(메모리 보호, 약 20여 초 분량)
   const startT = performance.now();
   function step(){
-    if(seq!==analysisSeq) return;                // 위치 바뀜 → 즉시 중단(폐기)
+    if(seq!==analysisSeq) return;                // 위치 변경/토글 → 즉시 중단(폐기)
     const sliceEnd = performance.now() + 55;     // 한 청크 ~55ms만 돌리고 화면에 양보
-    while(performance.now() < sliceEnd && (performance.now()-startT) < budget) mctsOneIter(ctx);
-    const done = (performance.now()-startT) >= budget;
+    while(performance.now() < sliceEnd && (performance.now()-startT) < budget && ctx.iters < ITER_CAP) mctsOneIter(ctx);
+    const done = (performance.now()-startT) >= budget || ctx.iters >= ITER_CAP;
     const stats = mctsStats(ctx);
-    stats.key = key; stats.live = !done;         // live=true 동안 "실시간" 표시
+    stats.key = key; stats.live = !done;         // live=true 동안 "🔴 실시간" 표시(무제한은 계속 true)
     analysisResult = stats; analyzing = false;
-    if(done){
-      analysisCache.set(key, stats);
-      recordTrend(snap);                          // 추이는 확정값으로 1회만 기록
-      render();
-    } else {
-      render();
-      setTimeout(step, 0);                        // 다음 청크(화면 갱신 후 이어서)
-    }
+    recordTrend(snap);                            // 추이 현재 점을 매 청크 갱신(무제한도 반영)
+    if(done) analysisCache.set(key, stats);       // 확정값만 캐시
+    render();
+    if(!done) setTimeout(step, 0);                // 다음 청크(화면 갱신 후 이어서)
   }
   setTimeout(step, 30);
 }
