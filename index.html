@@ -57,6 +57,8 @@
   #status b.blue { color: #2f6fed; }
   #status b.red { color: #e0463e; }
   #status .thinking { color: #7a5cff; font-weight: bold; }
+  #status .live-tag { color: #d8453d; font-size: 11px; font-weight: bold; animation: livepulse 1s infinite; }
+  @keyframes livepulse { 0%,100%{opacity:1;} 50%{opacity:.4;} }
 
   /* board: outer split white/black like the show */
   .boardwrap {
@@ -494,7 +496,10 @@ function analysisText(){
     html += ` <span style="color:#888">(다음: ` +
       top.slice(1).map(m=>`${describeMove(m.mv)} ${m.winPct}%`).join(', ') + `)</span>`;
   }
-  html += ` <span style="color:#aaa;font-size:11px">[${analysisResult.iters.toLocaleString()}회 시뮬]</span>`;
+  const n = analysisResult.iters.toLocaleString();
+  html += analysisResult.live
+    ? ` <span class="live-tag">🔴 실시간 ${n}회…</span>`
+    : ` <span style="color:#aaa;font-size:11px">[${n}회 시뮬]</span>`;
   return html;
 }
 
@@ -948,48 +953,58 @@ function selectChild(node, C){
   }
   return bestCh;
 }
-// rootSnapshot에서 MCTS 실행 → {moves:[{mv,visits,valueMean,winPct}], bestMove, bestWinPct, iters}
-function mctsSearch(root, opts){
+// --- MCTS를 단계 실행 가능하게 분해 (실시간 스트리밍 + 일괄 공용) ---
+function mctsInit(root, opts){
   opts = opts||{};
-  const timeMs = opts.timeMs||600, maxIters = opts.maxIters||100000, C = opts.C||1.4;
-  const rootNode = makeNode(root);
-  const start = performance.now();
-  let iters = 0;
-  while(iters < maxIters){
-    if((iters & 31)===0 && performance.now()-start > timeMs) break;
-    iters++;
-    let node = rootNode;
-    const s = cloneSim(root);
-    // 1) Selection
-    while(node.untried.length===0 && node.children.length>0 && s.phase!=='over'){
-      node = selectChild(node, C);
-      applyMove(s, node.move);
-    }
-    // 2) Expansion
-    if(s.phase!=='over' && node.untried.length>0){
-      const mv = node.untried.splice(randInt(node.untried.length), 1)[0];
-      applyMove(s, mv);
-      const child = makeNode(s, mv);
-      child.parent = node;
-      node.children.push(child);
-      node = child;
-    }
-    // 3) Simulation
-    const z1 = (s.phase==='over') ? (s.winner===1?1:s.winner===2?-1:0) : rolloutZ1(s);
-    // 4) Backprop (team1 절대 기준)
-    for(let n=node; n; n=n.parent){ n.N++; n.W1 += z1; }
+  return { root: cloneSim(root), rootNode: makeNode(root), C: opts.C||1.4, iters:0 };
+}
+function mctsOneIter(ctx){
+  ctx.iters++;
+  let node = ctx.rootNode;
+  const s = cloneSim(ctx.root);
+  // 1) Selection
+  while(node.untried.length===0 && node.children.length>0 && s.phase!=='over'){
+    node = selectChild(node, ctx.C);
+    applyMove(s, node.move);
   }
-  const sign = sideToMove(root)===1 ? 1 : -1;   // 루트에서 둘 차례 팀
-  const stats = rootNode.children.map(ch=>{
-    const qme = sign * (ch.N>0 ? ch.W1/ch.N : 0);  // 루트 둘 차례 팀 관점
+  // 2) Expansion
+  if(s.phase!=='over' && node.untried.length>0){
+    const mv = node.untried.splice(randInt(node.untried.length), 1)[0];
+    applyMove(s, mv);
+    const child = makeNode(s, mv);
+    child.parent = node;
+    node.children.push(child);
+    node = child;
+  }
+  // 3) Simulation
+  const z1 = (s.phase==='over') ? (s.winner===1?1:s.winner===2?-1:0) : rolloutZ1(s);
+  // 4) Backprop (team1 절대 기준)
+  for(let n=node; n; n=n.parent){ n.N++; n.W1 += z1; }
+}
+function mctsStats(ctx){
+  const sign = sideToMove(ctx.root)===1 ? 1 : -1;   // 루트에서 둘 차례 팀
+  const stats = ctx.rootNode.children.map(ch=>{
+    const qme = sign * (ch.N>0 ? ch.W1/ch.N : 0);
     return { mv: ch.move, visits: ch.N, valueMean: qme, winPct: Math.round((qme+1)/2*100) };
   }).sort((a,b)=> (b.visits-a.visits) || (b.valueMean-a.valueMean));
   return {
-    iters,
+    iters: ctx.iters,
     moves: stats,
     bestMove: stats.length ? stats[0].mv : null,
     bestWinPct: stats.length ? stats[0].winPct : 50,
   };
+}
+// 일괄 실행(AI·자가대국용): 시간/횟수 예산까지 한 번에
+function mctsSearch(root, opts){
+  opts = opts||{};
+  const timeMs = opts.timeMs||600, maxIters = opts.maxIters||100000;
+  const ctx = mctsInit(root, opts);
+  const start = performance.now();
+  while(ctx.iters < maxIters){
+    if((ctx.iters & 31)===0 && performance.now()-start > timeMs) break;
+    mctsOneIter(ctx);
+  }
+  return mctsStats(ctx);
 }
 
 //=====================================================================
@@ -1083,15 +1098,29 @@ function requestAnalysis(){
   const key = hashState(snap);
   if(analysisCache.has(key)){ analysisResult = analysisCache.get(key); analyzing=false; recordTrend(snap); render(); return; }
   const seq = ++analysisSeq;
-  analyzing = true; render();                    // "분석 중" 먼저 표시
-  setTimeout(()=>{
-    if(seq!==analysisSeq) return;                // 더 최신 요청이 있으면 폐기
-    const res = mctsSearch(snap, {timeMs: analysisBudgetMs()});
-    res.key = key;                               // 결과가 어떤 위치의 것인지 표시
-    analysisCache.set(key, res);
-    if(seq!==analysisSeq) return;
-    analysisResult = res; analyzing = false; recordTrend(snap); render();
-  }, 30);
+  // 실시간 스트리밍 분석(알파고식): 시뮬을 조금씩 누적하며 승률·최적수·횟수를 라이브 갱신
+  analyzing = true; render();                    // 첫 청크 전엔 "분석 중"
+  const ctx = mctsInit(snap, {});
+  const budget = analysisBudgetMs();
+  const startT = performance.now();
+  function step(){
+    if(seq!==analysisSeq) return;                // 위치 바뀜 → 즉시 중단(폐기)
+    const sliceEnd = performance.now() + 55;     // 한 청크 ~55ms만 돌리고 화면에 양보
+    while(performance.now() < sliceEnd && (performance.now()-startT) < budget) mctsOneIter(ctx);
+    const done = (performance.now()-startT) >= budget;
+    const stats = mctsStats(ctx);
+    stats.key = key; stats.live = !done;         // live=true 동안 "실시간" 표시
+    analysisResult = stats; analyzing = false;
+    if(done){
+      analysisCache.set(key, stats);
+      recordTrend(snap);                          // 추이는 확정값으로 1회만 기록
+      render();
+    } else {
+      render();
+      setTimeout(step, 0);                        // 다음 청크(화면 갱신 후 이어서)
+    }
+  }
+  setTimeout(step, 30);
 }
 
 //================= AI 차례 구동 =================
