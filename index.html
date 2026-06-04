@@ -474,7 +474,7 @@ function describeMove(mv){
 function analysisText(){
   if(!showAnalysis) return '';
   if(analyzing) return `<br><span class="thinking">🔍 분석 중...</span>`;
-  if(!analysisResult || !analysisResult.moves.length) return '';
+  if(!analysisResult || !analysisResult.moves.length || analysisResult.key !== hashState(snapshot())) return '';
   const top = analysisResult.moves.slice(0,3);
   let html = `<br>🔍 <b>추천: ${describeMove(top[0].mv)}</b> · 승률 <b>${top[0].winPct}%</b>`;
   if(top.length>1){
@@ -995,19 +995,20 @@ function addBadge(r, c, pct){
 // render() 안에서 호출: 캐시된 분석 결과를 보드에 그림
 function renderAnalysis(){
   if(!showAnalysis || !analysisResult) return;
+  if(analysisResult.key !== hashState(snapshot())) return;   // 현재 위치와 다른 분석이면 표시 안 함(국면 전환 stale·크래시 방지)
   const res = analysisResult, bm = res.bestMove;
   if(phase==='place'){
-    for(const m of res.moves) addBadge(m.mv.r, m.mv.c, m.winPct);        // 위치별 승률
-    if(bm){ const el=cellEl(bm.r, bm.c); if(el) el.classList.add('bestspot'); }
+    for(const m of res.moves){ if(m.mv.kind==='place') addBadge(m.mv.r, m.mv.c, m.winPct); }  // 위치별 승률
+    if(bm && bm.kind==='place'){ const el=cellEl(bm.r, bm.c); if(el) el.classList.add('bestspot'); }
   } else if(phase==='play'){
-    if(bm){                                                              // 전역 최적수 강조
+    if(bm && bm.kind==='play'){                                          // 전역 최적수 강조
       const p = pieces.find(x=>x.id===bm.pieceId);
       if(p){ const ef=cellEl(p.r, p.c); if(ef) ef.classList.add('bestfrom'); }
       const et = cellEl(bm.to.r, bm.to.c); if(et) et.classList.add('bestspot');
     }
     if(selected){                                                        // 선택한 말의 수별 승률
       for(const m of res.moves){
-        if(m.mv.pieceId!==selected.id) continue;
+        if(m.mv.kind!=='play' || m.mv.pieceId!==selected.id) continue;
         addBadge(m.mv.to.r, m.mv.to.c, m.winPct);
       }
     }
@@ -1039,6 +1040,7 @@ function requestAnalysis(){
   setTimeout(()=>{
     if(seq!==analysisSeq) return;                // 더 최신 요청이 있으면 폐기
     const res = mctsSearch(snap, {timeMs: analysisBudgetMs()});
+    res.key = key;                               // 결과가 어떤 위치의 것인지 표시
     analysisCache.set(key, res);
     if(seq!==analysisSeq) return;
     analysisResult = res; analyzing = false; render();
