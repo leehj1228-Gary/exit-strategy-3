@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 470 210" font-family="-apple-system,'Malgun Gothic',sans-serif">
+  <rect x="0" y="0" width="470" height="210" fill="#ffffff"/>
+  <text x="16" y="26" font-size="15" font-weight="bold" fill="#1f2329">받침(backer)의 원리 — 출구에 '딱' 멈춰야 탈출</text>
+
+  <!-- 공통 셀 그리기용 좌표: x=70,118,166,214 / 셀40 -->
+  <!-- 시나리오 A: 받침 O → 탈출 -->
+  <text x="12" y="78" font-size="12" font-weight="bold" fill="#1aa64b">받침 O</text>
+  <g stroke="#b8bec8" stroke-width="1.5">
+    <rect x="70" y="56" width="40" height="40" rx="6" fill="#e6e8eb"/>
+    <rect x="118" y="56" width="40" height="40" rx="6" fill="#e6e8eb"/>
+    <rect x="166" y="56" width="40" height="40" rx="6" fill="#1aa64b" stroke="#0d7d36"/>
+    <rect x="214" y="56" width="40" height="40" rx="6" fill="#e6e8eb"/>
+  </g>
+  <circle cx="90" cy="76" r="14" fill="#2f6fed" stroke="#fff" stroke-width="2"/>
+  <text x="186" y="81" font-size="16" fill="#fff" text-anchor="middle">↵</text>
+  <circle cx="234" cy="76" r="14" fill="#555" stroke="#fff" stroke-width="2"/>
+  <text x="234" y="80" font-size="9" fill="#fff" text-anchor="middle">받침</text>
+  <path d="M104 44 L182 44" stroke="#2f6fed" stroke-width="2.5" fill="none" marker-end="url(#ar)"/>
+  <text x="278" y="81" font-size="13" font-weight="bold" fill="#1aa64b">출구에서 멈춤 = 탈출! 🚪</text>
+
+  <!-- 시나리오 B: 받침 X → 실패 -->
+  <text x="12" y="160" font-size="12" font-weight="bold" fill="#d8453d">받침 X</text>
+  <g stroke="#b8bec8" stroke-width="1.5">
+    <rect x="70" y="138" width="40" height="40" rx="6" fill="#e6e8eb"/>
+    <rect x="118" y="138" width="40" height="40" rx="6" fill="#e6e8eb"/>
+    <rect x="166" y="138" width="40" height="40" rx="6" fill="#1aa64b" stroke="#0d7d36"/>
+    <rect x="214" y="138" width="40" height="40" rx="6" fill="#e6e8eb"/>
+  </g>
+  <circle cx="90" cy="158" r="14" fill="#2f6fed" stroke="#fff" stroke-width="2"/>
+  <text x="186" y="163" font-size="16" fill="#fff" text-anchor="middle">↵</text>
+  <path d="M104 126 L262 126" stroke="#d8453d" stroke-width="2.5" fill="none" marker-end="url(#ar2)"/>
+  <text x="278" y="163" font-size="13" font-weight="bold" fill="#d8453d">출구를 지나쳐 통과 = 실패 ✗</text>
+
+  <text x="16" y="200" font-size="11" fill="#888">※ 받침은 내 말·상대 말·벽 무엇이든 OK. 출구의 네 이웃 칸 중 하나에 받침이 있어야 그 방향으로 탈출 가능.</text>
+  <defs>
+    <marker id="ar" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#2f6fed"/></marker>
+    <marker id="ar2" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#d8453d"/></marker>
+  </defs>
+</svg>

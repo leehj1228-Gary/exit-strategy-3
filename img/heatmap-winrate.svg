@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 230 330" font-family="-apple-system,'Malgun Gothic',sans-serif">
+  <rect x="0" y="0" width="230" height="330" fill="#ffffff"/>
+  <text x="12" y="18" font-size="13" font-weight="bold" fill="#1f2329">배치 칸별 승률 (놓으면 이긴 비율)</text>
+  <g font-size="10" fill="#aab" text-anchor="middle"><text x="48" y="40">1열</text><text x="92" y="40">2열</text><text x="136" y="40">3열</text><text x="180" y="40">출구열</text></g>
+  <g font-size="10" fill="#aab" text-anchor="middle"><text x="14" y="73">1</text><text x="14" y="117">2</text><text x="14" y="161">3</text><text x="14" y="205">4</text><text x="14" y="249">5</text><text x="14" y="293">6</text></g>
+  <g stroke="#b8bec8" stroke-width="1.5" font-size="13" font-weight="bold" text-anchor="middle">
+    <!-- r1 --><rect x="72" y="48" width="40" height="40" rx="6" fill="#d7dbe0"/><text x="92" y="73" fill="#333">50%</text>
+              <rect x="116" y="48" width="40" height="40" rx="6" fill="#f3a6a0"/><text x="136" y="73" fill="#5a1410">48%</text>
+    <!-- r2 --><rect x="28" y="92" width="40" height="40" rx="6" fill="#d7dbe0"/><text x="48" y="117" fill="#333">49%</text>
+              <rect x="72" y="92" width="40" height="40" rx="6" fill="#f3a6a0"/><text x="92" y="117" fill="#5a1410">48%</text>
+              <rect x="116" y="92" width="40" height="40" rx="6" fill="#f3a6a0"/><text x="136" y="117" fill="#5a1410">44%</text>
+    <!-- r3 --><rect x="28" y="136" width="40" height="40" rx="6" fill="#1aa64b"/><text x="48" y="161" fill="#fff">59%</text>
+              <rect x="72" y="136" width="40" height="40" rx="6" fill="#74c69d"/><text x="92" y="161" fill="#0c3d22">54%</text>
+              <rect x="116" y="136" width="40" height="40" rx="6" fill="#e0463e"/><text x="136" y="161" fill="#fff">40%</text>
+    <!-- r4 --><rect x="28" y="180" width="40" height="40" rx="6" fill="#f0f1f4"/><text x="48" y="205" fill="#bbb" font-size="16">✕</text>
+              <rect x="72" y="180" width="40" height="40" rx="6" fill="#f0f1f4"/><text x="92" y="205" fill="#bbb" font-size="16">✕</text>
+              <rect x="116" y="180" width="40" height="40" rx="6" fill="#f0f1f4"/><text x="136" y="205" fill="#bbb" font-size="16">✕</text>
+              <rect x="160" y="180" width="40" height="40" rx="6" fill="#1aa64b" stroke="#0d7d36"/><text x="180" y="206" fill="#fff" font-size="15">↵</text>
+    <!-- r5 --><rect x="72" y="224" width="40" height="40" rx="6" fill="#f3a6a0"/><text x="92" y="249" fill="#5a1410">46%</text>
+              <rect x="116" y="224" width="40" height="40" rx="6" fill="#74c69d"/><text x="136" y="249" fill="#0c3d22">51%</text>
+    <!-- r6 --><rect x="72" y="268" width="40" height="40" rx="6" fill="#1aa64b"/><text x="92" y="293" fill="#fff">56%</text>
+              <rect x="116" y="268" width="40" height="40" rx="6" fill="#74c69d"/><text x="136" y="293" fill="#0c3d22">52%</text>
+  </g>
+  <text x="12" y="324" font-size="10" fill="#888">초록=이기는 자리, 빨강=지는 자리. 중앙 (3,3)=40% 최악 · 가장자리 (3,1)=59%·아래팔 (6,2)=56% 최고.</text>
+</svg>

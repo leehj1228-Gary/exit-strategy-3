@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 348 358" font-family="-apple-system,'Malgun Gothic',sans-serif">
+  <rect x="0" y="0" width="348" height="358" fill="#ffffff"/>
+  <!-- 열/행 라벨 -->
+  <g font-size="11" fill="#aab" text-anchor="middle">
+    <text x="48" y="18">1</text><text x="92" y="18">2</text><text x="136" y="18">3</text><text x="180" y="18">4</text><text x="224" y="18">5</text><text x="268" y="18">6</text><text x="312" y="18">7</text>
+  </g>
+  <g font-size="11" fill="#aab" text-anchor="middle">
+    <text x="14" y="52">1</text><text x="14" y="96">2</text><text x="14" y="140">3</text><text x="14" y="184">4</text><text x="14" y="228">5</text><text x="14" y="272">6</text><text x="14" y="316">7</text>
+  </g>
+  <g stroke="#b8bec8" stroke-width="1.5" rx="6">
+    <!-- r1 --><rect x="72" y="28" width="40" height="40" rx="6" fill="#e9f1ff"/><rect x="116" y="28" width="40" height="40" rx="6" fill="#e9f1ff"/><rect x="160" y="28" width="40" height="40" rx="6" fill="#eef0f3"/>
+    <!-- r2 --><rect x="28" y="72" width="40" height="40" rx="6" fill="#ffe45c"/><rect x="72" y="72" width="40" height="40" rx="6" fill="#e9f1ff"/><rect x="116" y="72" width="40" height="40" rx="6" fill="#e9f1ff"/><rect x="160" y="72" width="40" height="40" rx="6" fill="#eef0f3"/><rect x="204" y="72" width="40" height="40" rx="6" fill="#ffeceb"/><rect x="248" y="72" width="40" height="40" rx="6" fill="#ffeceb"/>
+    <!-- r3 --><rect x="28" y="116" width="40" height="40" rx="6" fill="#ffe45c"/><rect x="72" y="116" width="40" height="40" rx="6" fill="#e9f1ff"/><rect x="116" y="116" width="40" height="40" rx="6" fill="#e9f1ff"/><rect x="160" y="116" width="40" height="40" rx="6" fill="#eef0f3"/><rect x="204" y="116" width="40" height="40" rx="6" fill="#ffeceb"/><rect x="248" y="116" width="40" height="40" rx="6" fill="#ffeceb"/>
+    <!-- r4 --><rect x="28" y="160" width="40" height="40" rx="6" fill="#ffe45c"/><rect x="72" y="160" width="40" height="40" rx="6" fill="#e9f1ff"/><rect x="116" y="160" width="40" height="40" rx="6" fill="#e9f1ff"/><rect x="160" y="160" width="40" height="40" rx="6" fill="#1aa64b" stroke="#0d7d36"/><rect x="204" y="160" width="40" height="40" rx="6" fill="#ffeceb"/><rect x="248" y="160" width="40" height="40" rx="6" fill="#ffeceb"/><rect x="292" y="160" width="40" height="40" rx="6" fill="#ffe45c"/>
+    <!-- r5 --><rect x="72" y="204" width="40" height="40" rx="6" fill="#e9f1ff"/><rect x="116" y="204" width="40" height="40" rx="6" fill="#e9f1ff"/><rect x="160" y="204" width="40" height="40" rx="6" fill="#eef0f3"/><rect x="204" y="204" width="40" height="40" rx="6" fill="#ffeceb"/><rect x="248" y="204" width="40" height="40" rx="6" fill="#ffeceb"/><rect x="292" y="204" width="40" height="40" rx="6" fill="#ffe45c"/>
+    <!-- r6 --><rect x="72" y="248" width="40" height="40" rx="6" fill="#e9f1ff"/><rect x="116" y="248" width="40" height="40" rx="6" fill="#e9f1ff"/><rect x="160" y="248" width="40" height="40" rx="6" fill="#eef0f3"/><rect x="204" y="248" width="40" height="40" rx="6" fill="#ffeceb"/><rect x="248" y="248" width="40" height="40" rx="6" fill="#ffeceb"/><rect x="292" y="248" width="40" height="40" rx="6" fill="#ffe45c"/>
+    <!-- r7 --><rect x="160" y="292" width="40" height="40" rx="6" fill="#eef0f3"/><rect x="204" y="292" width="40" height="40" rx="6" fill="#ffeceb"/><rect x="248" y="292" width="40" height="40" rx="6" fill="#ffeceb"/>
+  </g>
+  <!-- 출구 화살표 -->
+  <text x="180" y="188" font-size="22" font-weight="bold" fill="#fff" text-anchor="middle">↵</text>
+  <!-- 범례 -->
+  <g font-size="11" fill="#555">
+    <rect x="28" y="344" width="12" height="12" rx="2" fill="#e9f1ff" stroke="#b8bec8"/><text x="44" y="354">P1 진영(1~3열)</text>
+    <rect x="150" y="344" width="12" height="12" rx="2" fill="#ffeceb" stroke="#b8bec8"/><text x="166" y="354">P2 진영(5~7열)</text>
+    <rect x="262" y="344" width="12" height="12" rx="2" fill="#ffe45c" stroke="#b8bec8"/><text x="278" y="354">헌터 구역</text>
+  </g>
+</svg>

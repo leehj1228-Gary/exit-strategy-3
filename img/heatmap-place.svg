@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 230 330" font-family="-apple-system,'Malgun Gothic',sans-serif">
+  <rect x="0" y="0" width="230" height="330" fill="#ffffff"/>
+  <text x="12" y="18" font-size="13" font-weight="bold" fill="#1f2329">일반 말 배치 빈도 (승자 기준·92판)</text>
+  <!-- 열 라벨 -->
+  <g font-size="10" fill="#aab" text-anchor="middle"><text x="48" y="40">1열</text><text x="92" y="40">2열</text><text x="136" y="40">3열</text><text x="180" y="40">출구열</text></g>
+  <!-- 행 라벨 -->
+  <g font-size="10" fill="#aab" text-anchor="middle"><text x="14" y="73">1</text><text x="14" y="117">2</text><text x="14" y="161">3</text><text x="14" y="205">4</text><text x="14" y="249">5</text><text x="14" y="293">6</text></g>
+  <g stroke="#b8bec8" stroke-width="1.5" font-size="14" font-weight="bold" text-anchor="middle">
+    <!-- r1 --><rect x="72" y="48" width="40" height="40" rx="6" fill="#2f6fed"/><text x="92" y="73" fill="#fff">106</text>
+              <rect x="116" y="48" width="40" height="40" rx="6" fill="#6f9cf5"/><text x="136" y="73" fill="#fff">73</text>
+    <!-- r2 --><rect x="28" y="92" width="40" height="40" rx="6" fill="#2f6fed"/><text x="48" y="117" fill="#fff">96</text>
+              <rect x="72" y="92" width="40" height="40" rx="6" fill="#2f6fed"/><text x="92" y="117" fill="#fff">93</text>
+              <rect x="116" y="92" width="40" height="40" rx="6" fill="#6f9cf5"/><text x="136" y="117" fill="#fff">72</text>
+    <!-- r3 --><rect x="28" y="136" width="40" height="40" rx="6" fill="#6f9cf5"/><text x="48" y="161" fill="#fff">69</text>
+              <rect x="72" y="136" width="40" height="40" rx="6" fill="#6f9cf5"/><text x="92" y="161" fill="#fff">84</text>
+              <rect x="116" y="136" width="40" height="40" rx="6" fill="#d9e6fd"/><text x="136" y="161" fill="#1f3a5f">42</text>
+    <!-- r4 (출구 행: 배치 불가) --><rect x="28" y="180" width="40" height="40" rx="6" fill="#f0f1f4"/><text x="48" y="205" fill="#bbb" font-size="16">✕</text>
+              <rect x="72" y="180" width="40" height="40" rx="6" fill="#f0f1f4"/><text x="92" y="205" fill="#bbb" font-size="16">✕</text>
+              <rect x="116" y="180" width="40" height="40" rx="6" fill="#f0f1f4"/><text x="136" y="205" fill="#bbb" font-size="16">✕</text>
+              <rect x="160" y="180" width="40" height="40" rx="6" fill="#1aa64b" stroke="#0d7d36"/><text x="180" y="206" fill="#fff" font-size="15">↵</text>
+    <!-- r5 --><rect x="72" y="224" width="40" height="40" rx="6" fill="#2f6fed"/><text x="92" y="249" fill="#fff">96</text>
+              <rect x="116" y="224" width="40" height="40" rx="6" fill="#d9e6fd"/><text x="136" y="249" fill="#1f3a5f">49</text>
+    <!-- r6 --><rect x="72" y="268" width="40" height="40" rx="6" fill="#2f6fed"/><text x="92" y="293" fill="#fff">90</text>
+              <rect x="116" y="268" width="40" height="40" rx="6" fill="#a9c4f9"/><text x="136" y="293" fill="#1f3a5f">50</text>
+  </g>
+  <text x="12" y="324" font-size="10" fill="#888">진할수록 자주 배치. 숫자=배치 횟수. ✕=출구 행(배치 불가). → 2열에 집중·양 팔 사용.</text>
+</svg>
