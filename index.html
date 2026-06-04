@@ -93,7 +93,7 @@
   .cell.dest.escape::before { background: rgba(255,208,0,.85); border-color:#fff; width:calc(var(--cell) * 0.46); height:calc(var(--cell) * 0.46); }
   .cell.dest.escape::after {
     content: "탈출!"; position:absolute; bottom:1px; font-size:11px; color:#fff; font-weight:bold;
-    text-shadow:0 0 3px #000;
+    text-shadow:0 0 3px #000; transform: none;   /* 출구 칸 ↩의 scaleX(-1) 상속 차단(글자 반전 방지) */
   }
   @keyframes pulse { from { outline-color:#ffd000; } to { outline-color:#fff; } }
   .cell.dest.capture::before { background: rgba(224,70,62,.55); border-color:#b32a23; }
