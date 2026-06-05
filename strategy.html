@@ -3,22 +3,22 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>출구 전략 3 — 전략 교재 (데이터 기반)</title>
+<title>출구 전략 3 — 전략 교재 (데이터 기반·심화판)</title>
 <style>
   * { box-sizing: border-box; }
   body { font-family: -apple-system, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
     background: #eef0f3; color: #1f2329; margin: 0; line-height: 1.75; }
-  .wrap { max-width: 860px; margin: 0 auto; background: #fff; padding: 44px 48px 60px;
+  .wrap { max-width: 880px; margin: 0 auto; background: #fff; padding: 44px 48px 60px;
     box-shadow: 0 2px 20px rgba(0,0,0,.07); }
   h1 { font-size: 28px; margin: 0 0 4px; }
   .lead { color: #666; font-size: 14px; margin: 0 0 18px; }
-  h2 { font-size: 21px; color: #2f6fed; border-bottom: 2px solid #eef2fb; padding-bottom: 7px; margin: 40px 0 14px; }
+  h2 { font-size: 21px; color: #2f6fed; border-bottom: 2px solid #eef2fb; padding-bottom: 7px; margin: 42px 0 14px; scroll-margin-top: 56px; }
   h3 { font-size: 16.5px; margin: 26px 0 8px; }
   p { margin: 10px 0; }
   a { color: #2f6fed; }
   .note { background: #f0f5ff; border-left: 4px solid #2f6fed; padding: 12px 16px; border-radius: 6px; font-size: 13.5px; margin: 16px 0; }
   .quote { background: #fffbe9; border-left: 4px solid #f0b400; padding: 12px 18px; border-radius: 6px; margin: 16px 0; }
-  .quote ol { margin: 4px 0; padding-left: 22px; }
+  .quote ol, .quote ul { margin: 4px 0; padding-left: 22px; }
   .quote li { margin: 6px 0; }
   .tip { background: #eafaf1; border-left: 4px solid #1aa64b; padding: 11px 16px; border-radius: 6px; font-size: 13.5px; margin: 14px 0; }
   .warn { background: #fdecea; border-left: 4px solid #e0463e; padding: 11px 16px; border-radius: 6px; font-size: 13.5px; margin: 14px 0; }
@@ -40,174 +40,349 @@
   .hl-green { color: #1aa64b; font-weight: bold; }
   .hl-red { color: #b32a23; font-weight: bold; }
   hr { border: none; border-top: 1px solid #eceef1; margin: 30px 0; }
-  .toolbar { position: sticky; top: 0; background: #fff; border-bottom: 1px solid #eef0f3; padding: 8px 0; margin: -44px -48px 20px; text-align: right; }
+  .toolbar { position: sticky; top: 0; z-index: 10; background: #fff; border-bottom: 1px solid #eef0f3; padding: 8px 0; margin: -44px -48px 16px; display:flex; justify-content:space-between; align-items:center; gap:10px; }
+  .toolbar .tt { font-size:13px; color:#888; margin-left:48px; }
   .toolbar button { font-size: 13px; padding: 7px 14px; border-radius: 8px; border: 1px solid #2f6fed; background: #2f6fed; color: #fff; cursor: pointer; margin-right: 48px; }
+  .toc { background:#f7f9fc; border:1px solid #e8edf5; border-radius:10px; padding:12px 18px; font-size:13.5px; columns:2; }
+  .toc a { display:block; padding:2px 0; color:#345; text-decoration:none; }
+  .toc a:hover { color:#2f6fed; }
   .print-note { font-size: 12px; color: #999; text-align: center; margin-top: 36px; }
+
+  /* JS 보드 렌더 */
+  svg.bd { width:100%; max-width:280px; height:auto; display:block; margin:0 auto; }
+  .bdc { stroke:#b8bec8; stroke-width:1; }
+  .bdc.exit { stroke:#0d7d36; }
+  .bx { fill:#fff; font-size:15px; text-anchor:middle; font-weight:bold; }
+  .pc { stroke:#fff; stroke-width:1.5; }
+  .pc.hunter { stroke:#ffd000; stroke-width:2.6; }
+  .pt { fill:#fff; font-weight:bold; text-anchor:middle; }
+  .bdc.hito { stroke:#1668ff; stroke-width:3.2; }
+  .bdc.hito.esc { stroke:#ffb000; stroke-width:3.5; }
+  .bdc.hito.cap { stroke:#e0463e; stroke-width:3.2; }
+  .bdc.hifrom { stroke:#1668ff; stroke-width:2.4; stroke-dasharray:4 2; }
+
+  /* 문제집 */
+  .problem { border:1px solid #e6e9ee; border-radius:12px; padding:16px 18px; margin:18px 0; background:#fcfdff; }
+  .problem .pno { font-weight:bold; color:#2f6fed; font-size:15px; }
+  .problem .pb-board { margin:10px auto; }
+  .problem .pb-q { font-size:14px; }
+  .problem .pb-btn { font-size:13px; padding:7px 14px; border-radius:8px; border:1px solid #2f6fed; background:#fff; color:#2f6fed; cursor:pointer; margin-top:6px; }
+  .problem .pb-btn:hover { background:#eef4ff; }
+  .problem .pb-a { display:none; margin-top:12px; background:#eafaf1; border-left:4px solid #1aa64b; padding:11px 16px; border-radius:6px; font-size:13.5px; }
+  .problem.show .pb-a { display:block; }
+  .problem .turn { display:inline-block; padding:1px 8px; border-radius:10px; color:#fff; font-size:12px; font-weight:bold; }
+  .turn.t1 { background:#2f6fed; } .turn.t2 { background:#e0463e; }
+
+  /* 해설 기보 */
+  .gametrend { width:100%; height:auto; display:block; }
+  .gkeys { display:flex; gap:16px; flex-wrap:wrap; justify-content:center; }
+  .gkeys .gk { flex:1 1 220px; max-width:280px; }
+  .gkeys .gk .cap { font-size:12.5px; color:#555; margin-top:4px; }
   @media print {
-    body { background: #fff; }
-    .wrap { box-shadow: none; max-width: none; padding: 0; }
-    .toolbar { display: none; }
-    figure, table, .quote, .tip, .warn, .note { break-inside: avoid; }
+    body { background:#fff; } .wrap { box-shadow:none; max-width:none; padding:0; }
+    .toolbar { display:none; } .toc { columns:2; }
+    figure, table, .quote, .tip, .warn, .note, .problem, .gk { break-inside: avoid; }
+    .problem .pb-a { display:block !important; }   /* 인쇄 시 정답 펼침 */
     h2 { break-after: avoid; }
   }
-  @media (max-width: 560px) { .wrap { padding: 24px 16px 40px; } .toolbar { margin: -24px -16px 16px; } .toolbar button { margin-right: 16px; } }
+  @media (max-width: 600px) { .wrap { padding: 24px 16px 40px; } .toolbar { margin: -24px -16px 14px; } .toolbar button, .toolbar .tt { margin-left:16px; margin-right:16px; } .toc { columns:1; } }
 </style>
 </head>
 <body>
 <div class="wrap">
-  <div class="toolbar"><button onclick="window.print()">🖨️ PDF로 저장 / 인쇄</button></div>
+  <div class="toolbar"><span class="tt">데이터 기반 전략 교재 · 심화판</span><button onclick="window.print()">🖨️ PDF로 저장</button></div>
 
-  <h1>출구 전략 3 — 전략 교재</h1>
-  <p class="lead">데이터 기반 · 바둑 정석처럼 공부하는 자료</p>
+  <h1>출구 전략 3 — 전략 교재 <span style="font-size:16px;color:#888">(심화판)</span></h1>
+  <p class="lead">엔진 자가대국 데이터로 배우는 정석 · 문제집 · 해설 기보</p>
 
   <div class="note">
-    바둑의 정석·격언처럼, 이 게임의 전략을 <b>우리 엔진의 실제 데이터</b>로 공부하는 자료입니다.
-    모든 수치는 게임에 내장된 <b>MCTS 엔진의 자가대국 92판</b>(양측 동일 엔진, 수당 ~50ms)에서 직접 뽑았습니다.
-    <br><span style="color:#888">※ 중간 강도·유한 표본이라 칸별 승률 같은 세부 수치는 "경향"으로 읽어 주세요. 큰 결론(탈출 레이스·템포·2열 집중)은 빈도·승률·기하학이 모두 일관되게 가리킵니다.</span>
+    바둑의 정석·사활처럼, 이 게임을 <b>우리 MCTS 엔진의 실제 데이터</b>로 공부합니다. 통계는 자가대국 <b>90여 판</b>,
+    문제·해설은 엔진이 평가한 실제 위치에서 뽑았습니다.
+    <br><span style="color:#888">※ 세부 수치는 "경향"으로 읽으세요. 큰 결론(탈출 레이스·받침·템포·2열 집중)은 빈도·승률·기하학이 모두 일관되게 가리킵니다.</span>
   </div>
 
-  <figure class="fig-sm">
-    <img src="img/board.svg" alt="37칸 보드">
-    <figcaption>37칸 십자형(180° 회전 대칭) 보드 — 가운데 초록이 출구, 노란 칸이 헌터 구역, 파랑=P1·빨강=P2 진영</figcaption>
-  </figure>
-
-  <h2>0. 한눈에 보는 핵심 격언</h2>
-  <div class="quote">
-    <ol>
-      <li><b>"이 게임은 탈출 레이스다."</b> — 승리 92판 중 <b>91판이 탈출</b>, 제거 승은 단 1판.</li>
-      <li><b>"먼저 탈출한 쪽이 이긴다."</b> — 첫 탈출 성공 측이 <b>89%</b> 승리.</li>
-      <li><b>"헌터로 잡으러 다니지 마라."</b> — 제거는 <b>패자가 더 많이</b> 함(승자 23 vs 패자 32). 헌터는 킬러가 아니라 <b>수문장</b>.</li>
-      <li><b>"출구 4방 이웃이 전부다."</b> — 탈출은 출구 뒤 <i>받침</i>이 있어야만 성립. 이 4칸을 두고 싸운다.</li>
-      <li><b>"중앙보다 2열·가장자리, 그리고 양 팔."</b> — 승자의 배치가 데이터로 그렇게 말한다.</li>
-    </ol>
+  <div class="toc">
+    <a href="#s0">0. 핵심 격언</a>
+    <a href="#s1">1. 본질 — 탈출 레이스</a>
+    <a href="#s2">2. 받침의 사활 원리</a>
+    <a href="#s3">3. 승리 전략</a>
+    <a href="#s4">4. 배치 정석 (왜?)</a>
+    <a href="#s5">5. 기물 이동 우선순위</a>
+    <a href="#s6">6. 헌터 활용·심화</a>
+    <a href="#s7">7. 단계별 전략</a>
+    <a href="#s8">8. 흔한 실수</a>
+    <a href="#s9">9. ★ 정석·사활 문제집</a>
+    <a href="#s10">10. ★ 해설 기보</a>
+    <a href="#s11">11. 분석으로 복기</a>
+    <a href="#s12">12. 용어 사전</a>
+    <a href="#s13">13. FAQ</a>
   </div>
 
-  <h2>1. 이 게임의 본질 — "탈출 레이스"</h2>
+  <figure class="fig-sm"><img src="img/board.svg" alt="37칸 보드"><figcaption>37칸 십자형(180° 회전 대칭) 보드 — 초록=출구, 노랑=헌터 구역, 파랑=P1·빨강=P2</figcaption></figure>
+
+  <h2 id="s0">0. 한눈에 보는 핵심 격언</h2>
+  <div class="quote"><ol>
+    <li><b>"이 게임은 탈출 레이스다."</b> — 승리의 99%가 <i>탈출 2명</i>, 제거 승은 1%.</li>
+    <li><b>"먼저 탈출한 쪽이 이긴다."</b> — 첫 탈출 측 <b>89%</b> 승.</li>
+    <li><b>"출구 4방 이웃을 잡아라."</b> — 게임 끝에 출구 이웃 칸을 점유한 비율이 <b>승자 14 : 패자 2</b>(7배). 받침·길목이 곧 승부.</li>
+    <li><b>"헌터로 잡으러 다니지 마라."</b> — 제거는 패자가 더 많이 함. 헌터는 킬러가 아니라 <b>수문장</b>.</li>
+    <li><b>"중앙보다 2열·가장자리, 그리고 양 팔."</b> — 승자의 배치가 데이터로 그렇게 말한다.</li>
+    <li><b>"방심하면 역전당한다."</b> — 73%로 앞서던 판이 뒤집힌다(§10 해설 기보).</li>
+  </ol></div>
+
+  <h2 id="s1">1. 이 게임의 본질 — "탈출 레이스"</h2>
   <figure class="fig-lg"><img src="img/winpaths.svg" alt="승리 경로"></figure>
-  <table>
-    <tr><th>승리 경로</th><th class="n">판수 (92판)</th></tr>
-    <tr><td><b>탈출 2명</b></td><td class="n"><b>91 (99%)</b></td></tr>
-    <tr><td>제거 3명</td><td class="n">1 (1%)</td></tr>
-  </table>
-  <p>목표는 둘(2탈출 / 3제거)이지만 <b>실전 승부는 거의 항상 탈출로 갈립니다.</b> 평균 게임 길이는 약 51수, 짧으면 23수에 끝납니다.</p>
-  <div class="quote"><b>그래서 모든 계획의 1순위는 "내 말 2명을 먼저 내보낸다."</b> 제거는 목적이 아니라 <i>수단</i>입니다.</div>
+  <p>목표는 둘(2탈출 / 3제거)이지만 <b>실전 승부는 거의 항상 탈출로 갈립니다.</b> 그리고 승부를 끝내는 <b>2번째 탈출은 평균 55수째</b>(자가대국 기준)에 나옵니다 — <b>초반 셋업 → 중반 받침 다툼 → 종반 결정</b>의 흐름입니다.</p>
+  <div class="quote"><b>모든 계획의 1순위: "내 말 2명을 먼저 내보낸다."</b> 제거는 목적이 아니라 수단입니다.</div>
 
-  <h2>2. 탈출의 사활(死活) 원리 — 받침(backer)</h2>
+  <h2 id="s2">2. 탈출의 사활(死活) 원리 — 받침(backer)</h2>
   <figure class="fig-lg"><img src="img/backer.svg" alt="받침 원리"></figure>
-  <ul>
-    <li>일반 말은 <b>직선으로 슬라이드</b>하다 벽·다른 말에 닿으면 멈춥니다.</li>
-    <li>출구는 <b>그냥 지나가면 탈출이 아니고</b>, 이동 끝에 <b>출구 칸에 "딱" 멈출 때만</b> 탈출입니다.</li>
-    <li>출구의 <b>네 이웃((3,4)·(5,4)·(4,3)·(4,5))은 모두 보드 안</b>입니다. 즉 <b>출구 바로 뒤에 "받침"이 있어야만</b> 그 자리에서 멈춰 탈출할 수 있습니다.</li>
-  </ul>
-  <p><b>핵심 명제:</b> <b>탈출은 "출구의 네 이웃 칸 중 하나에 받침이 있을 때만" 성립한다.</b> 그래서 이 게임의 진짜 싸움터는 <b>출구를 둘러싼 4칸</b>입니다.</p>
-  <ul>
-    <li><b>공격</b>: 내 말(또는 상대 말!)을 받침으로 세워 내 탈출 길을 연다.</li>
-    <li><b>수비</b>: 그 4칸을 점거/차단하거나, <b>헌터로 상대의 받침을 제거</b>해 상대 탈출을 무산시킨다.</li>
-  </ul>
-  <div class="tip">💡 받침은 <i>상대 말이어도 됩니다.</i> 내 말을 출구 옆에 함부로 두면 상대 탈출을 도와주는 꼴이 되기도 합니다.</div>
+  <p>출구는 <b>이동 끝에 "딱" 멈출 때만</b> 탈출입니다. 출구의 네 이웃 <code>(3,4)·(5,4)·(4,3)·(4,5)</code>은 모두 보드 안이므로, <b>출구 바로 뒤에 "받침"이 있어야만</b> 그 자리에서 멈춰 탈출합니다.</p>
+  <p><b>핵심 명제:</b> 탈출은 <b>출구의 네 이웃 중 하나에 받침이 있을 때만</b> 성립한다. 그래서 진짜 싸움터는 <b>출구를 둘러싼 4칸</b>입니다.</p>
+  <div class="tip">💡 <b>받침은 내 말·상대 말·벽 무엇이든 OK.</b> 데이터: 게임 끝에 출구 이웃 4칸을 점유한 말은 <b class="hl-blue">승자 14 : 패자 2</b> — 이 4칸을 잡는 쪽이 이깁니다. 문제 1·2(§9)에서 받침을 활용한 탈출을 직접 풀어보세요.</div>
 
-  <h2>3. 승리 전략 (큰 그림)</h2>
+  <h2 id="s3">3. 승리 전략 (큰 그림)</h2>
   <ul>
-    <li><b>선공이 약간 유리</b> — P1 54% : P2 46% (거의 호각, 실수 한 번이 승부).</li>
-    <li><b>템포가 거의 전부</b> — 첫 탈출 측 <b>89%</b> 승. 두 말의 탈출 경로를 <i>동시에</i> 준비해 반 박자 앞서라.</li>
-    <li><b>두 갈래로 위협</b> — 한쪽만 노리면 막힙니다(다음 장).</li>
-    <li><b>승률 50%가 분기점</b> — 분석을 켜면 보이는 추천수 승률이 50% 밑으로 떨어지는 순간이 <i>이미 밀린 수</i>. (→ 8장 복기)</li>
+    <li><b>선공이 약간 유리</b> — P1 54% : P2 46% (거의 호각).</li>
+    <li><b>템포가 거의 전부</b> — 첫 탈출 측 89% 승. 두 말의 탈출 경로를 <i>동시에</i> 준비해 반 박자 앞서라.</li>
+    <li><b>두 갈래로 위협</b> — 한쪽만 노리면 막힌다(아래 §4 그림).</li>
+    <li><b>리드해도 방심 금지</b> — 73% 우세가 뒤집힌 실제 기보(§10). 승률 50% 밑으로 떨어지는 순간이 패착.</li>
   </ul>
 
-  <h2>4. 배치 정석 (포석) — 어디에, 왜?</h2>
-  <h3>4-1. 데이터: 어디에 두는가</h3>
+  <h2 id="s4">4. 배치 정석 (포석) — 어디에, 왜?</h2>
   <div class="figrow">
-    <figure><img src="img/heatmap-place.svg" alt="배치 빈도"><figcaption>① 배치 빈도 — 2열·모서리에 집중, 양 팔 사용</figcaption></figure>
-    <figure><img src="img/heatmap-winrate.svg" alt="배치 승률"><figcaption>② 배치 칸별 승률 — 초록=이기는 자리, 빨강=지는 자리</figcaption></figure>
+    <figure><img src="img/heatmap-place.svg" alt="배치 빈도"><figcaption>① 배치 빈도 — 2열·모서리 집중, 양 팔 사용</figcaption></figure>
+    <figure><img src="img/heatmap-winrate.svg" alt="배치 승률"><figcaption>② 칸별 승률 — 초록=이기는 자리, 빨강=지는 자리</figcaption></figure>
   </div>
-  <p><b>(3,1) 59%·(6,2) 56%·(3,2) 54%</b> 가 높고, <b>중앙 쪽 (3,3) 40%·(2,3) 44%</b> 가 낮습니다.</p>
-
-  <h3>4-2. 왜 2열·가장자리이고, 왜 중앙(3열)을 피하나?</h3>
-  <p>데이터가 보여주는 경향에 <i>이유</i>를 붙이면:</p>
+  <h3>왜 2열·가장자리이고, 왜 중앙(3열)을 피하나?</h3>
   <ol>
-    <li><b>슬라이드 유연성.</b> 말은 부딪힐 때까지 직선으로 미끄러집니다. <b>2열</b>에 있으면 중앙으로 밀 때 <i>멈출 지점 선택지(런웨이)</i>가 많습니다. <b>3열</b>은 이미 출구열 코앞이라 한 번 움직이면 바로 빨려가 <i>되돌릴 여지가 적고</i> 위치가 고정됩니다.</li>
-    <li><b>헌터 노출.</b> 상대 헌터는 <b>중앙 코리도</b>로 견제하러 옵니다. 중앙(3열) 말은 <i>헌터 사정권에 빨리 들어가</i> 잡히거나 길이 막힙니다. <b>가장자리(1열)·2열</b>은 헌터가 닿기 어려워 안전하게 키웁니다. → (3,1) 가장자리가 59%로 최고인 이유.</li>
-    <li><b>받침 동선.</b> 탈출하려면 출구 이웃에 받침을 세우고 정렬해야 합니다. 2열·가장자리에서 출발하면 출구로 가는 <i>각도와 받침 만들 동선</i>이 풍부합니다. <b>(3,3)은 출구와 대각선</b>이라 직선 슬라이드로 출구에 깔끔히 멈추기 까다로워 <b>40%로 최악</b>.</li>
-    <li><b>양 팔 = 이중 위협.</b> 위(1~3행)·아래(5~6행)에 나눠 두면 출구를 두 방향에서 동시에 노립니다. (6,2)·(3,2) 같은 <i>양 팔 2열</i>이 고승률인 이유입니다 ↓</li>
+    <li><b>슬라이드 유연성.</b> 2열은 중앙으로 밀 때 멈출 지점(런웨이)이 많다. 3열은 출구열 코앞이라 위치가 고정된다.</li>
+    <li><b>헌터 노출.</b> 상대 헌터는 중앙 코리도로 온다. 중앙(3열) 말은 빨리 잡히고, 가장자리·2열은 안전하다 → (3,1) 59% 최고.</li>
+    <li><b>받침 동선.</b> 2열·가장자리는 출구로 가는 각도·받침 동선이 풍부. <b>(3,3)은 출구와 대각선</b>이라 깔끔히 멈추기 어려워 <b>40% 최악</b>.</li>
+    <li><b>양 팔 = 이중 위협.</b> 위·아래로 나눠 두 방향에서 노리면 헌터 하나로 못 막는다 ↓</li>
   </ol>
   <figure class="fig-sm"><img src="img/two-threats.svg" alt="이중 위협"></figure>
-  <div class="quote"><b>배치 원칙 요약:</b> ① 2열에 집중 ② 가장자리(1열)도 활용 ③ 위·아래 양 팔에 분산 ④ 중앙 (3,3)·(2,3)은 피하기 ⑤ 출구 행/열엔 못 놓으니, <i>한 수면 출구에 정렬되는</i> 자리를 고르기.</div>
-
-  <h3>4-3. 헌터 배치 — (4,1)이 표준</h3>
+  <h3>헌터 배치 — (4,1)이 표준</h3>
   <figure class="fig-lg"><img src="img/hunter.svg" alt="헌터 배치"></figure>
-  <p>헌터 184개 중 <b>(4,1)에 101개(55%)</b>. <b>출구 행(4행)에 가장 가까운 칸</b>이라 가운데 코리도로 <b>가장 빨리 진입</b>해 받침을 견제·차단할 수 있기 때문입니다.</p>
-  <div class="tip">🛠 <b>실전 팁:</b> 배치할 때 <b>분석 표시 ON + "정밀/심층/무제한"</b>으로 두면, 칸마다 승률 배지가 떠서 위 정석을 <i>눈으로</i> 확인하며 놓을 수 있습니다.</div>
+  <p>헌터 184개 중 (4,1)에 55% — 출구 행에 가장 가까워 중앙 코리도로 가장 빨리 진입합니다.</p>
 
-  <h2>5. 기물 이동 우선순위 — 무엇을, 왜 먼저?</h2>
+  <h2 id="s5">5. 기물 이동 우선순위 — 무엇을, 왜 먼저?</h2>
   <figure class="fig-lg"><img src="img/movemix.svg" alt="이동 타입"></figure>
-  <p>데이터가 가리키는 우선순위와 <i>이유</i>:</p>
   <ol>
-    <li><b>[최우선] 탈출 가능하면 즉시 탈출.</b> 특히 <b>두 번째 탈출 = 그 자리에서 승리.</b><br><span style="color:#666"><i>왜?</i> 탈출이 곧 득점이고 2개면 게임이 끝납니다 — 정의상 가장 가치 높은 수.</span></li>
-    <li><b>상대의 "탈출 임박"을 차단.</b> 상대가 받침+정렬을 완성했으면 다음 수에 실점합니다 → 그 받침을 치우거나(헌터) 길목을 점거.<br><span style="color:#666"><i>왜?</i> 막는 한 수는 <i>상대의 승리 한 수를 지우는</i> 것과 같습니다(템포 역전).</span></li>
-    <li><b>내 탈출 셋업 전진 (두 말 동시).</b> 출구 행·열 정렬 + 받침 확보를 한 수씩, <i>두 갈래로</i>.<br><span style="color:#666"><i>왜?</i> 두 위협이면 상대 헌터 하나로 다 못 막습니다(4-2 그림).</span></li>
-    <li><b>[하지 말 것] 의미 없는 제거 추격.</b><br><span style="color:#666"><i>왜?</i> 데이터 — 승자는 탈출을 <b>183번</b>, 패자는 제거를 <b>32번</b>(승자보다 많이) 했습니다. 제거 한 수는 <i>내 탈출 레이스에서 한 템포 손해</i>이고, 제거로 이긴 판은 92판 중 1판뿐입니다.</span></li>
+    <li><b>[최우선] 탈출 가능하면 즉시 탈출</b> (특히 2번째 = 승리). <span style="color:#666">정의상 가장 가치 높은 수.</span></li>
+    <li><b>상대 "탈출 임박" 차단</b> — 받침 제거(헌터)·길목 점거. <span style="color:#666">막는 한 수 = 상대 승리 한 수를 지움.</span></li>
+    <li><b>내 탈출 셋업 전진 (두 말 동시)</b>. <span style="color:#666">두 위협이면 다 못 막음.</span></li>
+    <li><b>[금지] 의미 없는 제거 추격</b> — 승자 탈출 183 vs 패자 제거 32. <span style="color:#666">제거 한 수 = 템포 손해.</span></li>
   </ol>
-  <div class="quote">격언: <b>"탈출 한 수 &gt; 제거 한 수."</b> 제거는 <i>상대 받침/임박 탈출을 지울 때만</i> 의미가 있습니다.</div>
+  <div class="quote">격언: <b>"탈출 한 수 &gt; 제거 한 수."</b> 제거는 <i>상대 받침/임박 탈출을 지울 때만</i> 의미가 있다.</div>
 
-  <h2>6. 헌터 활용법 — "킬러가 아니라 수문장"</h2>
+  <h2 id="s6">6. 헌터 활용·심화 — "킬러가 아니라 수문장"</h2>
   <table>
     <tr><th>항목</th><th class="n">수치</th><th>시사점</th></tr>
     <tr><td>제거로 이긴 판</td><td class="n">1 / 92</td><td>제거는 승리 경로가 아님</td></tr>
-    <tr><td>헌터 제거/판 (승자)</td><td class="n">0.25</td><td>거의 안 잡음</td></tr>
-    <tr><td>헌터 제거/판 (패자)</td><td class="n"><b>0.35</b></td><td>진 쪽이 더 잡음 → 추격은 손해</td></tr>
+    <tr><td>헌터 제거/판 (승자 · 패자)</td><td class="n">0.25 · <b>0.35</b></td><td>진 쪽이 더 잡음 → 추격은 손해</td></tr>
+    <tr><td>종반 출구 이웃 점유 (승자 · 패자)</td><td class="n"><b>14</b> · 2</td><td>헌터는 길목·받침 통제에 쓴다</td></tr>
   </table>
-  <h3>헌터의 올바른 3가지 용도</h3>
+  <h3>헌터 3대 용도 (우선순위)</h3>
   <ol>
-    <li><b>받침 차단/제거 (수비의 핵심).</b> 상대가 출구 옆에 세운 <b>받침을 제거</b>하면 상대 탈출이 통째로 무산됩니다 — 헌터의 가장 가치 있는 한 수.</li>
-    <li><b>길목 점거.</b> 출구 이웃 4칸·상대 정렬 경로를 막아 탈출을 봉쇄.</li>
-    <li><b>탈출 풀 줄이기(선택적).</b> 상대 일반 말을 하나 줄이면(5→4명) "2명 탈출" 난이도가 올라갑니다. <i>단, 한 수 쓰는 만큼 내 템포도 줄어드니</i> 확실할 때만.</li>
+    <li><b>받침 차단/제거.</b> 상대가 출구 옆에 세운 받침을 없애면 상대 탈출이 통째로 무산 — 가장 가치 있는 한 수(문제 4·5).</li>
+    <li><b>출구 이웃 점거(길목).</b> 헌터를 (3,4)·(5,4)·(4,3)·(4,5)에 놓아 봉쇄하거나, 거꾸로 내 탈출 받침으로 활용.</li>
+    <li><b>탈출 풀 줄이기.</b> 상대 말 하나 줄이면 "2탈출" 난이도↑. <i>단 템포를 쓰니 확실할 때만.</i></li>
   </ol>
-  <div class="warn">⚠️ 헌터끼리는 못 잡고, 헌터는 출구를 통과/탈출할 수 없습니다. 그래서 헌터는 "점수 사냥"이 아니라 <b>지역 통제</b>의 말입니다.</div>
+  <div class="warn">⚠️ 헌터끼리는 못 잡고, 출구 통과·탈출 불가. 헌터는 "점수 사냥"이 아니라 <b>지역 통제</b>의 말이다.</div>
 
-  <h2>7. 정석·격언 모음 (복습)</h2>
+  <h2 id="s7">7. 단계별 전략 (오프닝 / 중반 / 종반)</h2>
+  <h3>① 오프닝 (배치~초반, 약 1~15수)</h3>
   <ul>
-    <li>📌 <b>"제거는 미끼, 탈출이 목적."</b> (제거 승 1%)</li>
-    <li>📌 <b>"먼저 탈출한 쪽이 이긴다."</b> (89%)</li>
-    <li>📌 <b>"출구 뒤 받침을 먼저 그려라."</b> (탈출의 전제)</li>
-    <li>📌 <b>"중앙보다 2열·가장자리, 양 팔을 다 써라."</b> (배치 히트맵)</li>
-    <li>📌 <b>"헌터는 (4,1)에서 출발해 길을 막아라."</b> (헌터 정석)</li>
-    <li>📌 <b>"두 갈래 위협이면 헌터 하나로 못 막는다."</b></li>
-    <li>📌 <b>"헌터로 잡으러 가지 마라."</b> (패자가 더 잡음)</li>
+    <li>2열·가장자리에 <b>양 팔로 분산</b> 배치, 헌터는 (4,1).</li>
+    <li>초반엔 무리한 중앙 진입보다 <b>두 갈래 탈출 라인</b>을 동시에 그린다.</li>
+  </ul>
+  <h3>② 중반 (약 15~45수) — 받침 다툼</h3>
+  <ul>
+    <li><b>출구 이웃 4칸을 선점</b>한다(내 받침 만들기 / 상대 받침 막기).</li>
+    <li>상대가 탈출 임박이면 <b>헌터로 받침 제거</b>가 최우선. 내 탈출 셋업은 두 말 동시에.</li>
+    <li>여기서 <b>첫 탈출</b>이 보통 갈린다 → 첫 탈출 측 89% 승.</li>
+  </ul>
+  <h3>③ 종반 (약 45수~) — 결정</h3>
+  <ul>
+    <li>승부는 평균 <b>55수째 2번째 탈출</b>로 끝난다. 출구 4칸 통제가 전부.</li>
+    <li>한 수라도 받침/길목을 놓치면 즉시 실점. 이때 분석을 <b>무제한</b>으로 켜고 정밀하게.</li>
   </ul>
 
-  <h2>8. 우리 분석 기능으로 "복기"하는 법</h2>
+  <h2 id="s8">8. 흔한 실수 (데이터가 말하는 패자의 습관)</h2>
+  <table>
+    <tr><th>실수</th><th>근거</th></tr>
+    <tr><td>헌터로 <b>잡으러 다닌다</b></td><td>제거는 패자가 더 많이 함(0.35 vs 0.25), 제거 승 1%</td></tr>
+    <tr><td>말을 <b>중앙(3열)·한곳에 뭉쳐</b> 둔다</td><td>(3,3) 40% 최악, 헌터 하나에 길이 막힘</td></tr>
+    <tr><td><b>받침 없이</b> 출구로 돌진</td><td>받침 없으면 출구를 그냥 지나침(탈출 실패)</td></tr>
+    <tr><td>리드에 <b>방심</b>한다</td><td>73% 우세가 역전됨(§10)</td></tr>
+    <tr><td>blue spot만 보고 <b>승률을 안 본다</b></td><td>지는 자리에서도 "최선"은 표시됨 — 50% 밑이면 이미 밀린 것</td></tr>
+  </table>
+
+  <h2 id="s9">9. ★ 정석·사활 문제집</h2>
+  <p>엔진이 평가한 <b>실제 위치</b>입니다. 표시된 차례(파랑 P1 / 빨강 P2)가 둘 <b>최선의 한 수</b>를 찾아보세요. 출구는 가운데 초록, 노랑은 헌터 구역.</p>
+  <div id="problems"></div>
+
+  <h2 id="s10">10. ★ 해설 기보 — "방심한 순간, 역전"</h2>
+  <p>엔진 자가대국 한 판. <b>선공(P1·파랑)이 ~73%로 앞섰지만 역전패</b>한 게임입니다. 아래는 <b>P1 관점 승률 추이</b>(매 수 엔진 평가) — 선이 내려갈수록 P2(빨강)가 유리.</p>
+  <figure><div id="gtrend"></div><figcaption>게임 전체 P1(파랑) 승률 추이 — 17·39·41수에서 무너졌다</figcaption></figure>
+  <div class="gkeys" id="gkeys"></div>
+  <div class="quote" style="margin-top:14px">
+    <b>교훈:</b> ① <b>첫 탈출(17수)</b>이 균형을 무너뜨린다(53→30%). ② 종반 <b>헌터로 받침 자리(4,5) 선점(39수)</b>이 마지막 탈출을 완성시킨다. ③ 리드해도 <b>방심하면 역전</b>당한다 — 매 수 승률을 확인하라.
+  </div>
+
+  <h2 id="s11">11. 분석 기능으로 복기하는 법</h2>
   <ol>
-    <li><b>분석 표시 ON</b>, 강도는 <b>정밀/심층</b>(중요한 수는 <b>무제한</b>으로 끝까지 수렴시키기).</li>
-    <li><b>blue spot(최적수)을 맹신하지 말고 "승률 숫자"를 보라.</b> blue spot은 <i>지는 자리에서도</i> 항상 "그나마 최선"을 가리킵니다. 추천수 승률이 <b>50% 밑으로 떨어지는 순간 = 이미 밀린 것.</b></li>
-    <li><b>승률 추이 차트(📈)로 복기.</b> 한 판을 두고 <i>선이 꺾여 내려간 지점</i>을 찾으면 <b>거기가 패착</b>입니다. 그 수만 무르기로 되돌려 다른 수를 시험하세요.</li>
-    <li><b>학습 루프:</b> 두기 → 추이에서 패착 찾기 → 무르기 → 분석으로 더 나은 수 확인 → 다시. (바둑의 복기와 동일)</li>
+    <li><b>분석 표시 ON</b>, 강도 <b>정밀/심층</b>(중요한 수는 <b>무제한</b>).</li>
+    <li><b>blue spot보다 승률 숫자</b>를 봐라. 50% 밑 = 이미 밀린 것.</li>
+    <li><b>승률 추이 차트(📈)</b>로 꺾인 지점=패착을 찾아 그 수만 무르기 → 다른 수 시험.</li>
+    <li><b>기보 저장</b> 후 나중에 <b>불러와</b> 뒤로/앞으로로 복기(이 교재의 문제·해설처럼).</li>
   </ol>
 
-  <h2>부록 A. 데이터 방법론 (재현 가능)</h2>
-  <ul>
-    <li><b>표본</b>: MCTS 자가대국 <b>92판</b>, 양측 동일 엔진, 수당 ~50ms.</li>
-    <li><b>수집</b>: 승자/승리유형/게임길이/첫 탈출 주체/헌터 제거수/배치 좌표(자기 진영 프레임으로 정규화)/이동 타입(승자·패자별).</li>
-    <li><b>한계</b>: 중간 강도·유한 표본. 칸별 승률(40~59%)은 표본 노이즈를 포함하니 "경향"으로 읽으세요. 더 강한 엔진·수백 판이면 더 정밀해집니다.</li>
-    <li><b>재현</b>: 게임의 <code>mctsSearch()</code> 엔진으로 동일 통계를 다시 뽑을 수 있습니다.</li>
-  </ul>
+  <h2 id="s12">12. 용어 사전</h2>
+  <table>
+    <tr><th>용어</th><th>뜻</th></tr>
+    <tr><td><b>받침(backer)</b></td><td>출구 바로 뒤(이웃 칸)에서 내 말을 멈춰 세워 탈출시키는 말/벽. 탈출의 필수 조건.</td></tr>
+    <tr><td><b>출구 4칸</b></td><td>출구의 상하좌우 이웃 (3,4)·(5,4)·(4,3)·(4,5). 받침 자리이자 핵심 격전지.</td></tr>
+    <tr><td><b>탈출 임박(ready)</b></td><td>이번 수에 바로 출구에서 멈춰 탈출할 수 있는 상태.</td></tr>
+    <tr><td><b>이중 위협</b></td><td>두 말이 서로 다른 방향에서 동시에 탈출을 노리는 것. 헌터 하나로 못 막음.</td></tr>
+    <tr><td><b>템포</b></td><td>한 수의 빠르기. 먼저 탈출/셋업하는 쪽이 템포 우위.</td></tr>
+    <tr><td><b>blue spot</b></td><td>분석이 제시하는 최적수 강조 표시(파란 칸).</td></tr>
+  </table>
 
-  <h2>부록 B. 핵심 수치 요약표</h2>
+  <h2 id="s13">13. FAQ</h2>
+  <p><b>Q. 제거(헌터)로 이기는 게 더 쉬운 거 아닌가요?</b><br>A. 데이터상 제거 승은 92판 중 1판. 제거는 상대 탈출을 막는 수단일 뿐, 목표는 탈출입니다.</p>
+  <p><b>Q. 컴퓨터가 너무 셉니다.</b><br>A. 난이도를 낮추고(쉬움/보통), 분석을 켜서 추천수·승률을 보며 배우세요. 진 판은 추이 차트로 패착을 찾아 복기하면 빨리 늡니다.</p>
+  <p><b>Q. 선공이 무조건 유리한가요?</b><br>A. 54:46로 약간 유리하지만 호각입니다. §10처럼 리드도 방심하면 뒤집힙니다.</p>
+
+  <hr>
+  <h2 id="apx">부록 — 데이터 요약</h2>
   <table>
     <tr><th>지표</th><th class="n">값</th></tr>
     <tr><td>선공(P1) 승률</td><td class="n">54%</td></tr>
-    <tr><td>탈출 승 / 제거 승</td><td class="n"><b>91 / 1</b></td></tr>
-    <tr><td>첫 탈출 측 승률</td><td class="n"><b>89%</b></td></tr>
-    <tr><td>평균 게임 길이</td><td class="n">51수, 23~95</td></tr>
-    <tr><td>헌터 제거/판 (승자·패자)</td><td class="n">0.25 · 0.35</td></tr>
-    <tr><td>이동 타입(승자): 탈출·제거</td><td class="n">183 · 23</td></tr>
-    <tr><td>이동 타입(패자): 탈출·제거</td><td class="n">14 · 32</td></tr>
-    <tr><td>최선호 헌터 배치</td><td class="n">(4,1) 55%</td></tr>
-    <tr><td>최고 승률 배치칸</td><td class="n">(3,1) 59%, (6,2) 56%</td></tr>
-    <tr><td>최저 승률 배치칸</td><td class="n">(3,3) 40%</td></tr>
+    <tr><td>탈출 승 / 제거 승</td><td class="n">99% / 1%</td></tr>
+    <tr><td>첫 탈출 측 승률</td><td class="n">89%</td></tr>
+    <tr><td>2번째 탈출(승부 결정) 평균 시점</td><td class="n">약 55수</td></tr>
+    <tr><td>종반 출구 이웃 점유 (승자·패자)</td><td class="n">14 · 2</td></tr>
+    <tr><td>이동 타입 — 승자 탈출·제거 / 패자 탈출·제거</td><td class="n">183·23 / 14·32</td></tr>
+    <tr><td>최고·최저 승률 배치칸</td><td class="n">(3,1) 59% · (3,3) 40%</td></tr>
   </table>
-
-  <hr>
-  <p class="print-note">이 교재는 우리 엔진 데이터의 스냅샷입니다. · 상단 <b>🖨️ PDF로 저장</b> 버튼(또는 Ctrl+P)으로 PDF 저장 가능</p>
+  <p class="print-note">표본: MCTS 자가대국 약 90판 + 문제·해설은 엔진 평가 위치. · 상단 🖨️ 또는 Ctrl+P로 PDF 저장.</p>
 </div>
+
+<script>
+//===== 보드 정의 + 렌더러 =====
+const ROWS={1:[2,3,4],2:[1,2,3,4,5,6],3:[1,2,3,4,5,6],4:[1,2,3,4,5,6,7],5:[2,3,4,5,6,7],6:[2,3,4,5,6,7],7:[4,5,6]};
+const onB=(r,c)=>ROWS[r]&&ROWS[r].indexOf(c)>=0;
+const isExit=(r,c)=>r===4&&c===4;
+const YEL=new Set(['2,1','3,1','4,1','4,7','5,7','6,7']);
+function boardSVG(pos, hi){
+  const cell=30, gap=3, step=cell+gap, pad=8, W=pad*2+7*step-gap;
+  let s=`<svg viewBox="0 0 ${W} ${W}" class="bd" xmlns="http://www.w3.org/2000/svg">`;
+  for(let r=1;r<=7;r++)for(let c=1;c<=7;c++){ if(!onB(r,c))continue;
+    const x=pad+(c-1)*step, y=pad+(r-1)*step;
+    let fill='#e6e8eb', cls='bdc'; if(isExit(r,c)){fill='#1aa64b';cls+=' exit';} else if(YEL.has(r+','+c))fill='#ffe45c';
+    if(hi){ if(hi.from&&hi.from.r===r&&hi.from.c===c) cls+=' hifrom';
+            if(hi.to&&hi.to.r===r&&hi.to.c===c) cls+=' hito'+(hi.kind==='escape'?' esc':hi.kind==='capture'?' cap':''); }
+    s+=`<rect x="${x}" y="${y}" width="${cell}" height="${cell}" rx="4" fill="${fill}" class="${cls}"/>`;
+    if(isExit(r,c)) s+=`<text x="${x+cell/2}" y="${y+cell*0.7}" class="bx">↵</text>`;
+  }
+  for(const a of pos){ const t=a[0],k=a[1],n=a[2],r=a[3],c=a[4];
+    const x=pad+(c-1)*step+cell/2, y=pad+(r-1)*step+cell/2, col=t===1?'#2f6fed':'#e0463e';
+    s+=`<circle cx="${x}" cy="${y}" r="${cell*0.36}" fill="${col}" class="${k==='H'?'pc hunter':'pc'}"/>`;
+    s+=`<text x="${x}" y="${y+cell*0.14}" class="pt" font-size="${k==='H'?13:12}">${k==='H'?'H':n}</text>`;
+  }
+  return s+'</svg>';
+}
+
+//===== 문제 데이터 (엔진 평가 위치) =====
+const PROBLEMS=[
+ {pos:[[1,"M",1,2,1],[2,"M",1,4,3],[1,"M",2,1,3],[2,"M",2,2,4],[1,"M",3,4,2],[1,"M",4,1,4],[2,"M",4,7,5],[1,"M",5,4,1],[2,"M",5,7,6],[1,"H","H",3,3],[2,"H","H",4,5]],
+  side:2, sc:[0,0,1,0], ans:{desc:"1번 말을 출구로 탈출", from:{r:4,c:3}, to:{r:4,c:4}, kind:"escape", win:100}, second:{desc:"헌터 (3,5) 이동", win:75},
+  q:"이미 1명이 탈출한 빨강(P2) 차례. 승리를 굳히는 한 수는?",
+  lesson:"출구 오른쪽 (4,5)에 <b>내 헌터가 받침</b>으로 있다. (4,3)의 1번 말이 오른쪽으로 미끄러져 출구에서 딱 멈춤 → <b>2번째 탈출 = 즉시 승리(100%)</b>. 받침을 만들어 둔 결정타."},
+ {pos:[[1,"M",1,1,4],[2,"M",1,2,4],[1,"M",2,4,1],[1,"M",3,4,2],[2,"M",3,6,7],[1,"M",4,1,2],[1,"M",5,3,1],[2,"M",5,4,7],[1,"H","H",4,3],[2,"H","H",3,6]],
+  side:2, sc:[0,0,1,1], ans:{desc:"5번 말을 출구로 탈출", from:{r:4,c:7}, to:{r:4,c:4}, kind:"escape", win:100}, second:{desc:"헌터 (3,5) 이동", win:85},
+  q:"빨강(P2) 차례. 출구로 가는 길이 보이나요?",
+  lesson:"(4,7)의 5번 말이 왼쪽으로 미끄러지면 (4,3)의 <b>상대(파랑) 헌터가 받침</b>이 되어 출구에서 멈춘다 → 2번째 탈출 = 승리. <b>받침은 상대 말이어도 된다</b>는 걸 이용한 수."},
+ {pos:[[1,"M",1,1,4],[2,"M",1,2,4],[1,"M",2,2,1],[2,"M",3,7,4],[1,"M",4,4,1],[2,"M",5,7,6],[1,"H","H",3,4],[2,"H","H",6,4]],
+  side:1, sc:[1,1,1,1], ans:{desc:"헌터로 (2,4)의 적 말 제거", from:{r:3,c:4}, to:{r:2,c:4}, kind:"capture", win:79},
+  second:{desc:"헌터 (3,5) 이동", win:57},
+  q:"파랑(P1) 차례. 헌터를 어떻게 쓸까요?",
+  lesson:"(3,4)의 헌터로 <b>출구열(4열)에 있는 상대 말을 제거</b>. 단순 점수가 아니라 상대의 출구 정렬·받침 후보를 무너뜨리는 <b>수비적 제거</b>(79%). 출구열의 적 말은 위협이자 표적."},
+ {pos:[[1,"M",1,4,1],[2,"M",1,4,3],[1,"M",2,1,3],[2,"M",2,3,4],[1,"M",3,1,4],[2,"M",3,6,6],[1,"M",4,5,2],[2,"M",4,6,2],[1,"M",5,4,2],[2,"M",5,2,4],[1,"H","H",4,5],[2,"H","H",5,5]],
+  side:2, sc:[0,0,0,0], ans:{desc:"헌터를 (5,4)로 이동", from:{r:5,c:5}, to:{r:5,c:4}, kind:"move", win:83}, second:{desc:"2번 말 (3,1) 이동", win:53},
+  q:"빨강(P2) 차례. 격차 30%의 결정적 한 수는?",
+  lesson:"헌터를 <b>출구 바로 아래 (5,4)</b>에 놓는다. 출구 이웃을 선점해 내 탈출 받침을 만들고 상대 접근을 견제 — 2위 수와 <b>승률 격차 30%</b>로 가장 결정적. 종반은 출구 4칸 싸움."},
+ {pos:[[1,"M",2,1,2],[2,"M",2,2,6],[1,"M",4,4,7],[2,"M",5,6,7],[1,"H","H",3,3],[2,"H","H",6,4]],
+  side:1, sc:[1,2,1,2], ans:{desc:"헌터를 (4,3)으로 이동", from:{r:3,c:3}, to:{r:4,c:3}, kind:"move", win:99}, second:{desc:"헌터 (3,2) 이동", win:74},
+  q:"종반, 파랑(P1) 차례. 승부를 결정짓는 헌터 한 수는?",
+  lesson:"헌터를 <b>출구 바로 왼쪽 (4,3)</b>에 놓아 길목을 봉쇄. 상대의 출구 접근·받침을 차단하는 <b>결정타(99%)</b>. 종반엔 출구 이웃 4칸을 잡는 쪽이 이긴다."},
+ {pos:[[1,"M",1,2,1],[2,"M",1,4,7],[2,"M",2,2,6],[1,"M",3,1,4],[2,"M",3,7,4],[1,"M",4,6,3],[2,"M",5,3,1],[1,"H","H",2,2],[2,"H","H",4,5]],
+  side:2, sc:[1,1,1,0], ans:{desc:"5번 말을 (4,1)로 이동", from:{r:3,c:1}, to:{r:4,c:1}, kind:"move", win:97}, second:{desc:"2번 말 (7,6) 이동", win:68},
+  q:"빨강(P2) 차례. 화려한 수가 아닌 '전개'의 정석은?",
+  lesson:"5번 말을 <b>가장자리 (4,1)로 전진</b>. 탈출만이 능사가 아니라 — 상대 헌터가 닿기 어려운 안전한 라인을 잡아 다음 탈출을 준비하는 <b>위치 전개(97%)</b>. 좋은 수가 늘 눈에 띄는 건 아니다."},
+];
+
+//===== 해설 기보 데이터 =====
+const GAME={
+  result:"후공(P2·빨강) 승리",
+  p1:[73,58,70,53,72,59,73,55,63,47,61,50,61,43,49,39,53,30,38,25,33,26,30,26,37,30,42,26,38,25,34,27,34,21,31,22,32,23,27,9,13,0],
+  keys:[
+   {pos:[[1,"M",1,2,2],[2,"M",1,2,6],[1,"M",2,1,2],[2,"M",2,7,4],[1,"M",3,6,2],[2,"M",3,5,7],[1,"M",4,1,3],[2,"M",4,2,5],[1,"M",5,2,1],[2,"M",5,7,6],[1,"H","H",3,2],[2,"H","H",6,7]],
+    cap:"5수째 — 선공 P1(파랑)이 ~73%로 주도. 양 팔로 전개 중."},
+   {pos:[[1,"M",1,2,5],[2,"M",1,4,3],[1,"M",2,1,2],[2,"M",2,7,4],[1,"M",3,4,2],[2,"M",3,4,7],[1,"M",4,6,4],[2,"M",4,7,5],[1,"M",5,4,1],[2,"M",5,7,6],[1,"H","H",3,2],[2,"H","H",5,6]],
+    cap:"17수째 — P2 3번 말 첫 탈출! P1 53→30%로 급락(첫 탈출의 위력)."},
+   {pos:[[1,"M",1,2,1],[2,"M",1,4,3],[1,"M",2,1,3],[2,"M",2,2,4],[1,"M",3,4,2],[1,"M",4,1,4],[2,"M",4,7,5],[1,"M",5,4,1],[2,"M",5,7,6],[1,"H","H",2,3],[2,"H","H",5,5]],
+    cap:"39수째 — P2 헌터가 출구 옆 (4,5) 점거. 마지막 탈출의 받침 완성 → 41수째 2번째 탈출로 승부."},
+  ],
+};
+
+//===== 렌더 =====
+function winChart(arr){
+  const W=560,H=120,pad=10,n=arr.length;
+  const X=i=>pad+(W-2*pad)*(i/(n-1)), Y=v=>(H-pad)-(H-2*pad)*(v/100);
+  const mid=Y(50).toFixed(1);
+  const poly=arr.map((v,i)=>`${X(i).toFixed(1)},${Y(v).toFixed(1)}`).join(' ');
+  const dots=arr.map((v,i)=>`<circle cx="${X(i).toFixed(1)}" cy="${Y(v).toFixed(1)}" r="${i===n-1?3:1.6}" fill="${v>=50?'#1668ff':'#d8453d'}"/>`).join('');
+  return `<svg viewBox="0 0 ${W} ${H}" class="gametrend" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">`+
+    `<rect x="0" y="0" width="${W}" height="${H}" fill="#fff"/>`+
+    `<line x1="${pad}" y1="${mid}" x2="${W-pad}" y2="${mid}" stroke="#cbd2da" stroke-dasharray="4 3"/>`+
+    `<text x="${pad+2}" y="${Y(95)}" font-size="9" fill="#1668ff">P1 유리</text>`+
+    `<text x="${pad+2}" y="${Y(8)}" font-size="9" fill="#d8453d">P2 유리</text>`+
+    `<polyline points="${poly}" fill="none" stroke="#7a5cff" stroke-width="2"/>`+dots+`</svg>`;
+}
+(function init(){
+  // 문제
+  const wrap=document.getElementById('problems');
+  PROBLEMS.forEach((pb,idx)=>{
+    const d=document.createElement('div'); d.className='problem';
+    const turn = pb.side===1?'<span class="turn t1">파랑 P1</span>':'<span class="turn t2">빨강 P2</span>';
+    d.innerHTML =
+      `<div class="pno">문제 ${idx+1} · ${turn} 차례</div>`+
+      `<div class="pb-board">${boardSVG(pb.pos, null)}</div>`+
+      `<div class="pb-q">${pb.q}</div>`+
+      `<button class="pb-btn">정답 보기 ▾</button>`+
+      `<div class="pb-a"><b>정답:</b> ${pb.ans.desc} <b>(승률 ${pb.ans.win}%)</b>`+
+        (pb.second?` <span style="color:#888">— 차선: ${pb.second.desc} ${pb.second.win}%</span>`:'')+
+        `<br><b>이유:</b> ${pb.lesson}</div>`;
+    const btn=d.querySelector('.pb-btn'), bd=d.querySelector('.pb-board');
+    btn.addEventListener('click',()=>{
+      const open=d.classList.toggle('show');
+      btn.textContent = open?'정답 숨기기 ▴':'정답 보기 ▾';
+      bd.innerHTML = boardSVG(pb.pos, open?pb.ans:null);   // 정답이면 from/to 강조
+    });
+    wrap.appendChild(d);
+  });
+  // 해설 기보
+  document.getElementById('gtrend').innerHTML = winChart(GAME.p1);
+  const gk=document.getElementById('gkeys');
+  GAME.keys.forEach(k=>{
+    const f=document.createElement('figure'); f.className='gk';
+    f.innerHTML = boardSVG(k.pos, null) + `<div class="cap">${k.cap}</div>`;
+    gk.appendChild(f);
+  });
+})();
+</script>
 </body>
 </html>
