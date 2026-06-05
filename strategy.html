@@ -78,6 +78,13 @@
   .gkeys { display:flex; gap:16px; flex-wrap:wrap; justify-content:center; }
   .gkeys .gk { flex:1 1 220px; max-width:280px; }
   .gkeys .gk .cap { font-size:12.5px; color:#555; margin-top:4px; }
+
+  /* 정석 진행 */
+  .josa-list li { margin:4px 0; font-size:13.5px; }
+  .josa-list .cc { font-weight:bold; color:#2f6fed; }
+  #josa-plays figure { flex:1 1 200px; max-width:230px; }
+  #josa-plays .cap { font-size:12px; color:#444; margin-top:4px; line-height:1.45; text-align:left; padding:0 4px; }
+  #josa-plays .mv { font-weight:bold; color:#1f2329; }
   @media print {
     body { background:#fff; } .wrap { box-shadow:none; max-width:none; padding:0; }
     .toolbar { display:none; } .toc { columns:2; }
@@ -107,6 +114,7 @@
     <a href="#s2">2. 받침의 사활 원리</a>
     <a href="#s3">3. 승리 전략</a>
     <a href="#s4">4. 배치 정석 (왜?)</a>
+    <a href="#sjoseki">★ 정석 진행 (포석→20수)</a>
     <a href="#s5">5. 기물 이동 우선순위</a>
     <a href="#s6">6. 헌터 활용·심화</a>
     <a href="#s7">7. 단계별 전략</a>
@@ -165,6 +173,20 @@
   <h3>헌터 배치 — (4,1)이 표준</h3>
   <figure class="fig-lg"><img src="img/hunter.svg" alt="헌터 배치"></figure>
   <p>헌터 184개 중 (4,1)에 55% — 출구 행에 가장 가까워 중앙 코리도로 가장 빨리 진입합니다.</p>
+
+  <h2 id="sjoseki">★ 정석 진행 — 포석부터 20수까지</h2>
+  <p>바둑의 포석·정석처럼, 자가대국 <b>106판</b>에서 <b>가장 흔한 배치 형태(포석)</b>를 뽑고, 그 형태에서 <b>엔진의 표준 진행</b>을 20수까지 따라가며 각 수의 이유를 답니다.</p>
+  <div class="note">⚠️ 배치는 <b>유연</b>합니다(각 칸 11~22%로 단일 정석은 없음). 아래는 <b>가장 전형적인 형태</b>이며, 진짜 정석은 그 <b>원리</b>(2열·양 팔·헌터 가장자리)입니다. 헌터만은 (4,1)/(4,7)이 <b>50%</b>로 강한 관례.</div>
+
+  <h3>1) 포석 — 배치 형태 (1~12수)</h3>
+  <figure class="fig-sm"><div id="josa-formation"></div><figcaption>가장 흔한 배치 형태 — P1(파랑)은 2열 중심 양 팔, P2(빨강)는 6열 대칭, 헌터는 가장자리. 말의 번호 = 그 팀의 배치 순서.</figcaption></figure>
+  <ol id="josa-places" class="josa-list"></ol>
+  <div class="quote"><b>포석 요약:</b> 5개의 말을 <b>2열(P2는 6열)을 중심으로 위·아래 양 팔에 분산</b>하고 헌터는 (4,1)/(4,7). → 한쪽에 몰지 않아 <b>두 방향 탈출 위협</b>을 준비하고, 헌터로 <b>중앙 코리도</b>를 빠르게 노린다.</div>
+
+  <h3>2) 정석 진행 — 초반 이동 (13~20수)</h3>
+  <p>괄호 안은 <b>P1(파랑) 관점 승률</b>(엔진 평가). 파란 점선=출발 칸, 파란 테두리=도착 칸.</p>
+  <div id="josa-plays" class="figrow"></div>
+  <div class="quote"><b>정석 요약:</b> <b>선공(P1)이 템포를 살려 헌터로 중앙 코리도를 잡고, 말 하나를 출구 행(4행)에 올려 탈출 셋업을 시작</b>한다. 양 팔 형태라 위·아래 어디로든 위협 가능 → 승률이 59→68%로 서서히 P1에 기운다. 후공(P2)은 대칭으로 맞서지만 <b>반 박자 늦다</b> — 결국 <b>첫 탈출을 먼저 완성하는 쪽</b>이 이긴다(§10 해설 기보).</div>
 
   <h2 id="s5">5. 기물 이동 우선순위 — 무엇을, 왜 먼저?</h2>
   <figure class="fig-lg"><img src="img/movemix.svg" alt="이동 타입"></figure>
@@ -338,6 +360,35 @@ const GAME={
   ],
 };
 
+//===== 정석 데이터 (모달 배치 + 표준 진행) =====
+const JOSEKI={
+ formation:[[1,"M",1,2,1],[2,"M",1,5,6],[1,"M",2,6,2],[2,"M",2,7,5],[1,"M",3,1,2],[2,"M",3,2,6],[1,"M",4,5,2],[2,"M",4,7,6],[1,"M",5,2,2],[2,"M",5,3,6],[1,"H","H",4,1],[2,"H","H",4,7]],
+ places:[
+  {n:1,who:"P1 1번",cell:[2,1],pct:11,why:"가장자리(노란 구역 옆)에서 안전하게 출발"},
+  {n:2,who:"P2 1번",cell:[5,6],pct:18,why:"대칭 — P2의 '2번째 열'인 6열에 전개"},
+  {n:3,who:"P1 2번",cell:[6,2],pct:15,why:"아래 팔(5~6행) 2열 — 양 팔 분산 시작"},
+  {n:4,who:"P2 2번",cell:[7,5],pct:15,why:"P2 아래 팔 가장자리"},
+  {n:5,who:"P1 3번",cell:[1,2],pct:13,why:"위 팔(1행) 2열"},
+  {n:6,who:"P2 3번",cell:[2,6],pct:17,why:"P2 위 팔"},
+  {n:7,who:"P1 4번",cell:[5,2],pct:22,why:"가장 선호되는 자리 — 아래 팔 2열 보강"},
+  {n:8,who:"P2 4번",cell:[7,6],pct:18,why:"P2 아래 팔 보강"},
+  {n:9,who:"P1 5번",cell:[2,2],pct:13,why:"2열 중앙부를 채워 라인 완성"},
+  {n:10,who:"P2 5번",cell:[3,6],pct:19,why:"P2 위 팔 보강"},
+  {n:11,who:"P1 헌터",cell:[4,1],pct:50,why:"출구 행 끝 — 중앙 코리도 최단 진입(표준)"},
+  {n:12,who:"P2 헌터",cell:[4,7],pct:50,why:"대칭"},
+ ],
+ plays:[
+  {n:13,side:1,who:"헌터",from:{r:4,c:1},to:{r:4,c:2},kind:"move",p1:59,why:"첫 수부터 헌터를 출구 행(4행) 따라 중앙으로 전진 — 출구 코리도를 선점.",pos:[[1,"M",1,2,1],[2,"M",1,5,6],[1,"M",2,6,2],[2,"M",2,7,5],[1,"M",3,1,2],[2,"M",3,2,6],[1,"M",4,5,2],[2,"M",4,7,6],[1,"M",5,2,2],[2,"M",5,3,6],[1,"H","H",4,2],[2,"H","H",4,7]]},
+  {n:14,side:2,who:"2번 말",from:{r:7,c:5},to:{r:7,c:4},kind:"move",p1:55,why:"P2도 말을 중앙(출구열) 쪽으로 전개하며 맞선다.",pos:[[1,"M",1,2,1],[2,"M",1,5,6],[1,"M",2,6,2],[2,"M",2,7,4],[1,"M",3,1,2],[2,"M",3,2,6],[1,"M",4,5,2],[2,"M",4,7,6],[1,"M",5,2,2],[2,"M",5,3,6],[1,"H","H",4,2],[2,"H","H",4,7]]},
+  {n:15,side:1,who:"헌터",from:{r:4,c:2},to:{r:3,c:2},kind:"move",p1:59,why:"헌터 위치를 한 칸 조정 — 위쪽 코리도를 견제하며 진입로 확보.",pos:[[1,"M",1,2,1],[2,"M",1,5,6],[1,"M",2,6,2],[2,"M",2,7,4],[1,"M",3,1,2],[2,"M",3,2,6],[1,"M",4,5,2],[2,"M",4,7,6],[1,"M",5,2,2],[2,"M",5,3,6],[1,"H","H",3,2],[2,"H","H",4,7]]},
+  {n:16,side:2,who:"4번 말",from:{r:7,c:6},to:{r:6,c:6},kind:"move",p1:55,why:"P2 위 팔 말 전개.",pos:[[1,"M",1,2,1],[2,"M",1,5,6],[1,"M",2,6,2],[2,"M",2,7,4],[1,"M",3,1,2],[2,"M",3,2,6],[1,"M",4,5,2],[2,"M",4,6,6],[1,"M",5,2,2],[2,"M",5,3,6],[1,"H","H",3,2],[2,"H","H",4,7]]},
+  {n:17,side:1,who:"3번 말",from:{r:1,c:2},to:{r:1,c:4},kind:"move",p1:64,why:"위 팔 말을 출구열(4열) 쪽으로 슬라이드 — 위쪽 탈출 라인을 준비.",pos:[[1,"M",1,2,1],[2,"M",1,5,6],[1,"M",2,6,2],[2,"M",2,7,4],[1,"M",3,1,4],[2,"M",3,2,6],[1,"M",4,5,2],[2,"M",4,6,6],[1,"M",5,2,2],[2,"M",5,3,6],[1,"H","H",3,2],[2,"H","H",4,7]]},
+  {n:18,side:2,who:"헌터",from:{r:4,c:7},to:{r:5,c:7},kind:"move",p1:60,why:"P2 헌터 재배치로 아래쪽을 견제.",pos:[[1,"M",1,2,1],[2,"M",1,5,6],[1,"M",2,6,2],[2,"M",2,7,4],[1,"M",3,1,4],[2,"M",3,2,6],[1,"M",4,5,2],[2,"M",4,6,6],[1,"M",5,2,2],[2,"M",5,3,6],[1,"H","H",3,2],[2,"H","H",5,7]]},
+  {n:19,side:1,who:"4번 말",from:{r:5,c:2},to:{r:4,c:2},kind:"move",p1:68,why:"핵심! 말을 출구 행(4행)에 올려 탈출 정렬을 시작 — 받침만 갖추면 탈출 임박(68%).",pos:[[1,"M",1,2,1],[2,"M",1,5,6],[1,"M",2,6,2],[2,"M",2,7,4],[1,"M",3,1,4],[2,"M",3,2,6],[1,"M",4,4,2],[2,"M",4,6,6],[1,"M",5,2,2],[2,"M",5,3,6],[1,"H","H",3,2],[2,"H","H",5,7]]},
+  {n:20,side:2,who:"헌터",from:{r:5,c:7},to:{r:4,c:7},kind:"move",p1:64,why:"P2 헌터를 출구 행 끝으로 되돌려 P1의 탈출 길목을 견제.",pos:[[1,"M",1,2,1],[2,"M",1,5,6],[1,"M",2,6,2],[2,"M",2,7,4],[1,"M",3,1,4],[2,"M",3,2,6],[1,"M",4,4,2],[2,"M",4,6,6],[1,"M",5,2,2],[2,"M",5,3,6],[1,"H","H",3,2],[2,"H","H",4,7]]},
+ ],
+};
+
 //===== 렌더 =====
 function winChart(arr){
   const W=560,H=120,pad=10,n=arr.length;
@@ -382,6 +433,18 @@ function winChart(arr){
     f.innerHTML = boardSVG(k.pos, null) + `<div class="cap">${k.cap}</div>`;
     gk.appendChild(f);
   });
+  // 정석 진행
+  document.getElementById('josa-formation').innerHTML = boardSVG(JOSEKI.formation, null);
+  const jpl=document.getElementById('josa-places');
+  JOSEKI.places.forEach(p=>{ const li=document.createElement('li');
+    li.innerHTML=`<b>${p.n}수</b> · ${p.who} → <span class="cc">(${p.cell[0]},${p.cell[1]})</span> <span style="color:#aaa">${p.pct}%</span> — ${p.why}`;
+    jpl.appendChild(li); });
+  const jpp=document.getElementById('josa-plays');
+  JOSEKI.plays.forEach(p=>{ const f=document.createElement('figure');
+    const tag=p.side===1?'<span class="turn t1">P1</span>':'<span class="turn t2">P2</span>';
+    f.innerHTML = boardSVG(p.pos, {from:p.from, to:p.to, kind:p.kind}) +
+      `<div class="cap"><span class="mv">${p.n}수 ${tag} ${p.who} (${p.from.r},${p.from.c})→(${p.to.r},${p.to.c})</span> · 승률 ${p.p1}%<br>${p.why}</div>`;
+    jpp.appendChild(f); });
 })();
 </script>
 </body>
