@@ -60,6 +60,12 @@
   #status .live-tag { color: #d8453d; font-size: 11px; font-weight: bold; animation: livepulse 1s infinite; }
   @keyframes livepulse { 0%,100%{opacity:1;} 50%{opacity:.4;} }
 
+  /* 기보 리뷰 바 */
+  #reviewbar { display:none; align-items:center; gap:10px; width:100%; max-width:560px; margin:-2px 0 12px;
+    background:#eef4ff; border:1px solid #cdddff; border-radius:10px; padding:8px 12px; font-size:13px; }
+  #reviewbar .rv-info { flex:1; color:#234; line-height:1.4; }
+  #reviewbar button { font-size:12px; padding:5px 10px; }
+
   /* board: outer split white/black like the show */
   .boardwrap {
     background: linear-gradient(90deg, #ffffff 0 50%, #111 50% 100%);
@@ -208,6 +214,8 @@
 
   <div id="status"></div>
 
+  <div id="reviewbar"><span class="rv-info"></span><button id="exitreview">리뷰 종료 · 새 게임</button></div>
+
   <div class="boardwrap">
     <div id="board"></div>
   </div>
@@ -222,7 +230,8 @@
   </div>
 
   <div class="controls">
-    <button id="undo">↩️ 무르기</button>
+    <button id="undo" title="무르기">↩️ 뒤로</button>
+    <button id="redo" title="앞으로가기">앞으로 ↪️</button>
     <button class="primary" id="restart">처음부터 다시</button>
     <label class="atoggle"><input type="checkbox" id="analysis"> 🔍 분석 표시</label>
     <select id="astrength" title="분석 강도(시뮬레이션 시간/깊이)">
@@ -231,6 +240,9 @@
       <option value="deeper">분석: 심층</option>
       <option value="max">분석: 무제한(계속)</option>
     </select>
+    <button id="savekifu" title="현재 기보를 파일로 저장">💾 기보 저장</button>
+    <button id="loadkifu" title="저장한 기보를 불러와 복기">📂 기보 불러오기</button>
+    <input type="file" id="kifufile" accept=".json,application/json" style="display:none">
   </div>
 
   <details>
@@ -345,6 +357,9 @@ function placeableCellsOf(st){
 //================= 게임 상태 (UI 전역) =================
 let pieces, phase, placeTeam, placeStep, moverCount, current, selected, dests, gameMsg, lastAi;
 let history = [];   // 무르기용: 각 수를 두기 직전의 전체 상태 스냅샷 스택
+let redo = [];      // 앞으로가기용: [{state, moves}] 스택 (무르기의 역방향)
+let moveLog = [];   // 기보: 현재 라인의 수 목록(배치/이동/패스)
+let reviewMode = false, reviewMeta = null;  // 기보 리뷰(불러오기) 모드
 
 // 대전 설정
 let mode = 'pvp';      // 'pvp' | 'pvc'
@@ -361,11 +376,11 @@ const analysisCache = new Map(); // positionHash → 결과
 let winTrend = [];          // 승률 추이 [{ply, p1}] — P1(블루) 관점 승률%
 
 const LEVELS = {
-  easy:   {label:'쉬움',       depth:1,  time:0,    noise:0.35, place:'random'},
-  medium: {label:'보통',       depth:4,  time:250,  noise:0.10, place:'heuristic'},
-  hard:   {label:'어려움',     depth:8,  time:500,  noise:0,    place:'eval'},
-  insane: {label:'매우 어려움', depth:12, time:1000, noise:0,    place:'eval'},
-  mcts:   {label:'학습형(MCTS)', engine:'mcts', time:800},
+  easy:   {label:'쉬움',       depth:2,  time:120,  noise:0.25, place:'heuristic'},
+  medium: {label:'보통',       depth:8,  time:600,  noise:0.04, place:'eval'},
+  hard:   {label:'어려움',     depth:12, time:1400, noise:0,    place:'eval'},
+  insane: {label:'매우 어려움', depth:16, time:2800, noise:0,    place:'eval'},
+  mcts:   {label:'학습형(MCTS)', engine:'mcts', time:2500},
 };
 const WIN = 100000;
 
@@ -383,6 +398,7 @@ function freshState(){
   history = [];         // 새 게임 시작 시 무르기 기록 초기화
   analysisResult = null; analyzing = false; analysisSeq++;  // 분석 상태 초기화
   winTrend = [];        // 승률 추이 초기화
+  redo = []; moveLog = []; reviewMode = false; reviewMeta = null;  // 앞으로가기·기보 초기화
 }
 freshState();
 
@@ -456,6 +472,9 @@ function render(){
   document.getElementById('sc2').classList.toggle('active', (phase==='place'&&placeTeam===2)||(phase==='play'&&current===2));
   document.getElementById('status').innerHTML = statusText();
   const ub = document.getElementById('undo'); if(ub) ub.disabled = !canUndo();
+  const rb = document.getElementById('redo'); if(rb) rb.disabled = !canRedo();
+  const sk = document.getElementById('savekifu'); if(sk) sk.disabled = (moveLog.length===0 && redo.length===0);
+  renderReviewBar();
   renderWinTrend();
 }
 
@@ -509,6 +528,7 @@ function analysisText(){
 //================= 배치 단계 =================
 function placePiece(r,c){
   pushHistory();
+  logMove({kind:'place', team:placeTeam, r, c});
   if(placeStep==='movers'){
     moverCount[placeTeam]++;
     pieces.push({id:pieces.length, team:placeTeam, type:'mover', num:moverCount[placeTeam], r, c, alive:true, escaped:false, captured:false});
@@ -557,6 +577,7 @@ function onCellClick(r,c){
 
 function doMove(p, d){
   pushHistory();
+  logMove({kind:'play', team:p.team, pieceId:p.id, from:{r:p.r,c:p.c}, to:{r:d.r,c:d.c,kind:d.kind,target:d.target}});
   gameMsg='';
   lastAi = null;
   const from = {r:p.r, c:p.c};
@@ -612,16 +633,18 @@ function endGame(team, reason){
   render();
 }
 
-//================= 무르기(Undo) =================
-function pushHistory(){
-  history.push({
+//================= 무르기(Undo) / 앞으로가기(Redo) / 기보 =================
+function captureState(){
+  return {
     pieces: pieces.map(p=>({...p})),
     phase, placeTeam, placeStep,
     moverCount: {1:moverCount[1], 2:moverCount[2]},
     current, gameMsg,
     lastAi: lastAi ? {from: lastAi.from?{...lastAi.from}:null, to: lastAi.to?{...lastAi.to}:null} : null,
-  });
+  };
 }
+function pushHistory(){ history.push(captureState()); redo = []; }   // 새 수를 두면 앞으로가기 기록 폐기(새 분기)
+function logMove(mv){ moveLog.push(mv); }                            // 기보 기록
 function restoreHistory(h){
   pieces = h.pieces.map(p=>({...p}));
   phase = h.phase; placeTeam = h.placeTeam; placeStep = h.placeStep;
@@ -640,18 +663,91 @@ function canUndo(){
   // 컴퓨터 대전: 사람이 둔 수가 하나라도 있어야 무를 수 있음
   return history.some(h => (h.phase==='place' ? h.placeTeam : h.current) !== aiTeam);
 }
+// 수(ply) 단위로 무르기/앞으로 — history.length===moveLog.length 불변식 유지
 function undo(){
   if(!canUndo()) return;
-  if(mode==='pvp'){
-    restoreHistory(history.pop());      // 1수 되돌림
-  } else {
-    // 사람 차례가 될 때까지 되돌림(직전 컴퓨터 수 + 내 수)
-    do { restoreHistory(history.pop()); }
-    while(history.length>0 && aiToAct());
+  const steps = [];   // 한 수씩 {post(직후 상태), move} 수집(역순)
+  function undoOnePly(){
+    const post = captureState();
+    restoreHistory(history.pop());
+    steps.push({ post, move: moveLog.length ? moveLog.pop() : null });
+  }
+  if(mode==='pvp'){ undoOnePly(); }
+  else { do { undoOnePly(); } while(history.length>0 && aiToAct()); }   // 사람 차례까지(AI수+내수)
+  redo.push({ steps: steps.reverse() });   // 정방향으로 저장
+  lastAi = null;
+  render();
+  requestAnalysis();
+}
+function canRedo(){ return !aiThinking && redo.length>0; }
+function redoMove(){
+  if(!canRedo()) return;
+  const { steps } = redo.pop();
+  for(const st of steps){
+    history.push(captureState());
+    if(st.move) moveLog.push(st.move);
+    restoreHistory(st.post);
   }
   lastAi = null;
   render();
   requestAnalysis();
+}
+
+//================= 기보(Kifu) 저장 / 불러오기 / 리뷰 =================
+function tstamp(){ const d=new Date(), p=n=>String(n).padStart(2,'0');
+  return d.getFullYear()+p(d.getMonth()+1)+p(d.getDate())+'_'+p(d.getHours())+p(d.getMinutes())+p(d.getSeconds()); }
+function fullMoves(){ return moveLog.concat(redo.slice().reverse().flatMap(r=>r.moves)); }  // 현재 라인 + 앞으로 = 전체 기보
+function saveKifu(){
+  const moves = fullMoves();
+  if(!moves.length){ alert('저장할 수가 없습니다(아직 둔 수 없음).'); return; }
+  const meta = {
+    app:'exit-strategy-3', version:1, savedAt:new Date().toISOString(),
+    mode, aiLevel: mode==='pvc'?aiLevel:null, aiTeam: mode==='pvc'?aiTeam:null,
+    result: phase==='over' ? document.getElementById('status').textContent.replace(/\s+/g,' ').trim().slice(0,60) : '진행 중',
+    moveCount: moves.length, moves,
+  };
+  const blob = new Blob([JSON.stringify(meta,null,2)], {type:'application/json'});
+  const url = URL.createObjectURL(blob), a = document.createElement('a');
+  a.href=url; a.download='출구전략_기보_'+tstamp()+'.json';
+  document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+}
+function loadKifuFile(file){
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const data = JSON.parse(e.target.result);
+      if(!data || !Array.isArray(data.moves)) throw new Error('형식이 올바르지 않습니다');
+      startReview(data);
+    } catch(err){ alert('기보를 읽지 못했습니다: '+err.message); }
+  };
+  reader.readAsText(file);
+}
+function replayApply(mv){
+  if(mv.kind==='place'){ if(placeableCells().some(([r,c])=>r===mv.r&&c===mv.c)) placePiece(mv.r, mv.c); }
+  else if(mv.kind==='play'){ const p=pieces.find(x=>x.id===mv.pieceId && x.alive); if(p) doMove(p, mv.to); }
+  else if(mv.kind==='pass'){ passTurn(); }
+}
+function startReview(data){
+  const wasAnalysis = showAnalysis;
+  showAnalysis = false;                 // 일괄 재생 중 분석 끔(속도)
+  mode = 'pvp';                         // 리뷰 중 AI 자동수 방지
+  $('mode').value='pvp'; syncSetupVisibility();
+  freshState();
+  reviewMode = true; reviewMeta = data;
+  for(const mv of (data.moves||[])) replayApply(mv);   // 끝 위치까지 재생(history/moveLog 자동 구축)
+  showAnalysis = wasAnalysis; $('analysis').checked = wasAnalysis;
+  render();
+  requestAnalysis();
+}
+function exitReview(){ reviewMode=false; reviewMeta=null; applySetup(); }
+function renderReviewBar(){
+  const el = document.getElementById('reviewbar'); if(!el) return;
+  if(!reviewMode){ el.style.display='none'; return; }
+  el.style.display='flex';
+  const cur = moveLog.length, total = cur + redo.reduce((a,r)=>a+r.steps.length,0);
+  const m = reviewMeta||{};
+  const extra = (m.result? ' · '+m.result : '') + (m.mode==='pvc'? ' · vs 컴퓨터('+(m.aiLevel||'')+')' : '');
+  el.querySelector('.rv-info').textContent = `📂 기보 리뷰 — ${cur}/${total}수 (뒤로/앞으로로 이동, 분석 켜고 복기)${extra}`;
 }
 
 //=====================================================================
@@ -738,19 +834,23 @@ function evaluate(s, aiT){
       for(const d of hunterDestsOf(occ,h)) if(d.kind==='capture') threat[d.target]=h.team;
     }
   }
+  const ready = {1:0, 2:0};   // 탈출 임박(이번 수에 출구로 탈출 가능) 말 수
   for(const p of s.pieces){
     if(p.type!=='mover' || !p.alive) continue;
     const sign = p.team===aiT ? 1 : -1;
-    // 이번 수에 출구로 탈출 가능(강력한 위협)
-    if(moverDestsOf(occ,p).some(d=>d.kind==='escape')) e += sign*130;
+    // 이번 수에 출구로 탈출 가능(= 승리 경로의 핵심 셋업) → 크게 가중
+    if(moverDestsOf(occ,p).some(d=>d.kind==='escape')){ e += sign*200; ready[p.team]++; }
     // 출구 근접도(가까울수록 +)
-    e -= sign*4*(Math.abs(p.r-EXIT.r)+Math.abs(p.c-EXIT.c));
+    e -= sign*3*(Math.abs(p.r-EXIT.r)+Math.abs(p.c-EXIT.c));
     // 적 헌터에게 곧 잡힐 위험
     if(threat[p.id]!==undefined){
       e += sign*(-70);
-      if(s.current===threat[p.id]) e += sign*(-50); // 그 헌터 차례면 임박
+      if(s.current===threat[p.id]) e += sign*(-60); // 그 헌터 차례면 임박
     }
   }
+  // 이중 탈출 위협(2명 이상 탈출 임박 = 헌터 하나로 못 막음, 거의 결정적)
+  if(ready[aiT]  >= 2) e += 250;
+  if(ready[opp]  >= 2) e -= 250;
   return e;
 }
 
@@ -1182,6 +1282,7 @@ function passTurn(){
     return endGame(0, '양 팀 모두 둘 수 있는 말이 없습니다.');
   }
   pushHistory();
+  logMove({kind:'pass', team:current});
   current = nxt; selected=null; dests=[];
   render();
   maybeAiTurn();
@@ -1211,6 +1312,11 @@ $('restart').addEventListener('click', applySetup); // 현재 설정으로 새 �
 $('undo').addEventListener('click', undo);
 $('analysis').addEventListener('change', ()=>{ showAnalysis = $('analysis').checked; requestAnalysis(); });
 $('astrength').addEventListener('change', ()=>{ analysisCache.clear(); requestAnalysis(); });
+$('redo').addEventListener('click', redoMove);
+$('savekifu').addEventListener('click', saveKifu);
+$('loadkifu').addEventListener('click', ()=>$('kifufile').click());
+$('kifufile').addEventListener('change', e=>{ const f=e.target.files[0]; if(f) loadKifuFile(f); e.target.value=''; });
+$('exitreview').addEventListener('click', exitReview);
 
 buildGrid();
 render();
